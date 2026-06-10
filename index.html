@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Post — Portal de Acesso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ══════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════ */
+:root{
+  --wp-blue:#1B2FA6;--wp-blue2:#152480;--wp-blue3:#0D1B6E;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:#DDE1ED;--border2:#C5CBDF;
+  --text:#111827;--text2:#4B5563;--text3:#9CA3AF;
+  --blue-lt:#EEF0FB;--blue-md:#C7CDFB;
+  --red:#991B1B;--red-lt:#FEE2E2;
+  --green:#166534;--green-lt:#DCFCE7;
+  --amber:#92600A;--amber-lt:#FEF3C7;
+  --gray-lt:#F3F4F6;
+  --radius:6px;--radius-lg:10px;--radius-xl:14px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg:0 20px 60px rgba(0,0,0,0.28);
+  --font:'Barlow',sans-serif;
+  --font-cond:'Barlow Condensed',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* ══════════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════════ */
+#loginScreen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:24px;
+  background:linear-gradient(140deg,var(--wp-blue3) 0%,var(--wp-blue) 55%,#2541C4 100%);
+  position:relative;overflow:hidden;
+}
+#loginScreen::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+/* decorative circle glow */
+#loginScreen::after{
+  content:'';position:absolute;
+  width:520px;height:520px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%);
+  bottom:-160px;right:-120px;pointer-events:none;
+}
+.login-box{width:100%;max-width:420px;position:relative;z-index:1}
+.login-logo-wrap{text-align:center;margin-bottom:28px}
+.login-brand{color:#fff;font-family:var(--font-cond);font-size:32px;font-weight:700;letter-spacing:3px;line-height:1}
+.login-sub{color:rgba(255,255,255,.55);font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
+.login-card{
+  background:rgba(255,255,255,0.97);
+  border-radius:var(--radius-xl);padding:32px;
+  box-shadow:var(--shadow-lg);
+}
+.login-card h2{
+  font-family:var(--font-cond);font-size:21px;font-weight:700;
+  letter-spacing:0.4px;color:var(--wp-blue);margin-bottom:3px;
+}
+.login-card>p{font-size:13px;color:var(--text2);margin-bottom:22px}
+
+/* tabs */
+.tabs{display:flex;background:var(--bg);border-radius:var(--radius);padding:3px;margin-bottom:20px}
+.tab{
+  flex:1;padding:8px;border:none;background:transparent;
+  border-radius:calc(var(--radius) - 1px);
+  font-family:var(--font-cond);font-size:13px;font-weight:600;
+  letter-spacing:0.5px;text-transform:uppercase;
+  color:var(--text3);cursor:pointer;transition:all .15s;
+}
+.tab.active{background:var(--wp-blue);color:#fff;box-shadow:0 2px 6px rgba(27,47,166,.3)}
+
+/* forms */
+.form-field{margin-bottom:14px}
+.form-field label{
+  display:block;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.8px;
+  color:var(--text2);margin-bottom:5px;
+}
+.form-field input,.form-field select{
+  width:100%;padding:10px 12px;
+  border:1.5px solid var(--border);border-radius:var(--radius);
+  font-family:var(--font);font-size:14px;color:var(--text);
+  background:#fff;outline:none;transition:border-color .15s;
+}
+.form-field input:focus,.form-field select:focus{
+  border-color:var(--wp-blue);box-shadow:0 0 0 3px rgba(27,47,166,.1);
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 18px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-family:var(--font-cond);font-size:13px;font-weight:600;
+  letter-spacing:.5px;text-transform:uppercase;
+  cursor:pointer;background:#fff;color:var(--text);
+  transition:all .15s;white-space:nowrap;
+}
+.btn:hover{background:var(--bg);border-color:var(--border2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--wp-blue);color:#fff;border-color:var(--wp-blue)}
+.btn-primary:hover:not(:disabled){background:var(--wp-blue2);border-color:var(--wp-blue2)}
+.btn-full{width:100%}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
+.btn-ghost:hover{background:var(--blue-lt);color:var(--wp-blue);border-color:transparent}
+.btn-danger{color:var(--red);border-color:#FCA5A5}
+.btn-danger:hover{background:var(--red-lt)}
+
+/* messages */
+.msg-err{background:var(--red-lt);color:var(--red);border:1.5px solid #FCA5A5;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.msg-ok{background:var(--green-lt);color:var(--green);border:1.5px solid #86EFAC;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+
+/* spinner */
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.spin-dark{border-color:rgba(27,47,166,.2);border-top-color:var(--wp-blue)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════════ */
+#appScreen{display:none;min-height:100vh;flex-direction:column}
+
+/* topbar */
+.topbar{
+  height:58px;background:var(--wp-blue);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(27,47,166,.4);
+}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-brand{color:#fff;font-family:var(--font-cond);font-size:19px;font-weight:700;letter-spacing:2px}
+.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.2)}
+.topbar-label{color:rgba(255,255,255,.6);font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border-radius:20px;padding:4px 14px 4px 4px;cursor:pointer;transition:background .15s}
+.user-pill:hover{background:rgba(255,255,255,.22)}
+.uavatar{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-cond);font-size:11px;font-weight:700;
+  overflow:hidden;background:rgba(255,255,255,.25);color:#fff;flex-shrink:0;
+}
+.uavatar img{width:100%;height:100%;object-fit:cover}
+.uname{font-size:13px;font-weight:600;color:#fff;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.urole{font-size:11px;color:rgba(255,255,255,.65)}
+
+/* ══════════════════════════════════════════════
+   PORTAL MAIN
+══════════════════════════════════════════════ */
+.portal-main{flex:1;padding:40px 24px 60px;max-width:1100px;margin:0 auto;width:100%}
+.portal-greeting{margin-bottom:36px}
+.portal-greeting h1{
+  font-family:var(--font-cond);font-size:26px;font-weight:700;
+  color:var(--text);letter-spacing:.3px;margin-bottom:4px;
+}
+.portal-greeting p{font-size:14px;color:var(--text2)}
+.portal-greeting .highlight{color:var(--wp-blue);font-weight:600}
+
+/* section label */
+.section-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--text3);margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* tiles grid */
+.tiles-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:16px;margin-bottom:40px;
+}
+.tile{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-xl);padding:26px 20px 22px;
+  cursor:pointer;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:12px;position:relative;overflow:hidden;
+  box-shadow:var(--shadow);
+  text-decoration:none;color:inherit;
+}
+.tile::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--wp-blue) 0%,#2541C4 100%);
+  opacity:0;transition:opacity .18s;
+}
+.tile:hover{
+  border-color:var(--wp-blue);
+  box-shadow:0 6px 20px rgba(27,47,166,.15);
+  transform:translateY(-2px);
+}
+.tile:hover::before{opacity:.04}
+.tile:hover .tile-icon-wrap{background:var(--wp-blue);color:#fff;border-color:var(--wp-blue)}
+.tile:hover .tile-icon-wrap svg{stroke:#fff}
+.tile:hover .tile-name{color:var(--wp-blue)}
+.tile-icon-wrap{
+  width:54px;height:54px;border-radius:14px;
+  background:var(--blue-lt);border:1.5px solid var(--blue-md);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;flex-shrink:0;position:relative;z-index:1;
+}
+.tile-icon-wrap svg{width:24px;height:24px;stroke:var(--wp-blue);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .18s}
+.tile-name{
+  font-family:var(--font-cond);font-size:14px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.6px;color:var(--text);
+  line-height:1.25;transition:color .18s;position:relative;z-index:1;
+}
+.tile-desc{font-size:12px;color:var(--text3);line-height:1.4;position:relative;z-index:1}
+.tile-badge{
+  position:absolute;top:10px;right:10px;
+  background:var(--wp-blue);color:#fff;
+  font-family:var(--font-cond);font-size:10px;font-weight:700;
+  letter-spacing:.5px;padding:2px 7px;border-radius:99px;
+}
+
+/* locked tile */
+.tile.locked{opacity:.45;cursor:not-allowed;pointer-events:auto}
+.tile.locked:hover{transform:none;border-color:var(--border);box-shadow:var(--shadow)}
+.tile.locked:hover .tile-icon-wrap{background:var(--blue-lt);color:var(--text3);border-color:var(--blue-md)}
+.tile.locked:hover .tile-icon-wrap svg{stroke:var(--wp-blue)}
+.tile.locked:hover .tile-name{color:var(--text)}
+.lock-icon{position:absolute;top:10px;right:10px;color:var(--text3)}
+
+/* ══════════════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════════════ */
+.admin-section{margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.card-title{font-family:var(--font-cond);font-size:16px;font-weight:700;letter-spacing:.3px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+thead tr{background:var(--surface2)}
+th{
+  text-align:left;padding:10px 16px;
+  font-family:var(--font-cond);font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.7px;color:var(--text2);
+  border-bottom:1.5px solid var(--border);white-space:nowrap;
+}
+td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFF}
+.tfoot-bar{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.b-admin{background:#EEF0FB;color:var(--wp-blue)}
+.b-lider{background:var(--amber-lt);color:var(--amber)}
+.b-usuario{background:var(--gray-lt);color:var(--text2)}
+.b-active{background:var(--green-lt);color:var(--green)}
+.b-inactive{background:var(--gray-lt);color:var(--text3)}
+
+/* avatar */
+.t-avatar{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--wp-blue);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-cond);font-size:11px;font-weight:700;
+  margin-right:8px;vertical-align:middle;overflow:hidden;flex-shrink:0;
+}
+.t-avatar img{width:100%;height:100%;object-fit:cover}
+td .t-avatar{display:inline-flex}
+
+/* icon btn */
+.icon-btn{
+  width:30px;height:30px;border-radius:var(--radius);
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--border);background:#fff;cursor:pointer;
+  color:var(--text3);transition:all .13s;
+}
+.icon-btn:hover{border-color:var(--wp-blue);color:var(--wp-blue);background:var(--blue-lt)}
+
+/* toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-box{position:relative;flex:1;min-width:200px}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);width:14px;height:14px;pointer-events:none}
+.search-box input{width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:var(--text);outline:none}
+.search-box input:focus{border-color:var(--wp-blue)}
+
+/* ══════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════ */
+.modal{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal.open{display:flex}
+.modal-box{
+  background:#fff;border-radius:var(--radius-xl);
+  width:100%;max-width:460px;
+  box-shadow:var(--shadow-lg);overflow:hidden;
+  animation:modalIn .2s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.modal-head{
+  padding:18px 22px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:var(--font-cond);font-size:17px;font-weight:700;letter-spacing:.3px}
+.modal-body{padding:22px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:10px;background:var(--surface2)}
+
+/* permission checkboxes */
+.perm-grid{display:grid;gap:8px;margin-top:4px}
+.perm-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border:1.5px solid var(--border);
+  border-radius:var(--radius);cursor:pointer;transition:all .13s;
+}
+.perm-row:hover{border-color:var(--wp-blue);background:var(--blue-lt)}
+.perm-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--wp-blue);cursor:pointer;flex-shrink:0}
+.perm-row-info{flex:1}
+.perm-row-name{font-family:var(--font-cond);font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--text)}
+.perm-row-desc{font-size:11px;color:var(--text3)}
+.perm-row.checked{border-color:var(--wp-blue);background:var(--blue-lt)}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  padding:11px 18px;border-radius:var(--radius-lg);
+  font-family:var(--font-cond);font-size:13px;font-weight:600;letter-spacing:.3px;
+  box-shadow:var(--shadow-md);
+  transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+  background:var(--text);color:#fff;
+}
+#toast.show{transform:none;opacity:1}
+#toast.ok{background:var(--green);color:#fff}
+#toast.err{background:var(--red);color:#fff}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media(max-width:640px){
+  .portal-main{padding:24px 16px 40px}
+  .tiles-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .tile{padding:20px 12px 16px}
+  .tile-icon-wrap{width:46px;height:46px;border-radius:12px}
+  .tile-icon-wrap svg{width:20px;height:20px}
+  .tile-name{font-size:12px}
+  .tile-desc{display:none}
+  .form-row{grid-template-columns:1fr}
+  .topbar{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo-wrap">
+      <div class="login-brand">WORLD POST</div>
+      <div class="login-sub">Portal de Acesso</div>
+    </div>
+    <div class="login-card">
+      <h2>Bem-vindo</h2>
+      <p>Acesse com suas credenciais corporativas</p>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Entrar</button>
+        <button class="tab" onclick="switchTab('register')">Cadastrar</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="tabLogin">
+        <div id="loginErr" class="msg-err"></div>
+        <div class="form-field">
+          <label>E-mail</label>
+          <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label>Senha</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Entrar
+        </button>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="tabRegister" style="display:none">
+        <div id="regErr" class="msg-err"></div>
+        <div id="regOk" class="msg-ok"></div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Nome</label>
+            <input type="text" id="regNome" placeholder="Seu nome">
+          </div>
+          <div class="form-field">
+            <label>Matrícula</label>
+            <input type="text" id="regMatricula" placeholder="WP-0000">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>E-mail</label>
+          <input type="email" id="regEmail" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Setor</label>
+            <select id="regSetor">
+              <option value="">Selecione</option>
+              <option value="expedicao">Expedição</option>
+              <option value="recebimento">Recebimento</option>
+              <option value="logistica">Logística</option>
+              <option value="compras">Compras</option>
+              <option value="manutencao">Manutenção</option>
+              <option value="direcao">Direção</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Turno</label>
+            <select id="regTurno">
+              <option value="">Selecione</option>
+              <option value="Diurno">Diurno</option>
+              <option value="Vespertino">Vespertino</option>
+              <option value="Noturno">Noturno</option>
+              <option value="Administrativo">Administrativo</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Senha</label>
+          <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary btn-full" id="regBtn" onclick="doRegister()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Criar conta
+        </button>
+        <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px">Após o cadastro, aguarde liberação de acesso pelo administrador.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     APP SCREEN
+══════════════════════════════════════════ -->
+<div id="appScreen">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">WORLD POST</span>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">Portal</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-pill" onclick="openSelfProfile()">
+        <div class="uavatar" id="topAvatar">--</div>
+        <div>
+          <div class="uname" id="topName">—</div>
+          <div class="urole" id="topRole">—</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-ghost" style="color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2)" onclick="doLogout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </div>
+
+  <div class="portal-main">
+
+    <!-- Greeting -->
+    <div class="portal-greeting">
+      <h1>Olá, <span class="highlight" id="greetName">—</span> 👋</h1>
+      <p id="greetSub">Selecione um sistema para acessar.</p>
+    </div>
+
+    <!-- Systems tiles -->
+    <div class="section-label">Sistemas disponíveis</div>
+    <div class="tiles-grid" id="tilesContainer">
+      <!-- rendered by JS -->
+    </div>
+
+    <!-- Admin section -->
+    <div id="adminSection" style="display:none">
+      <div class="section-label">Administração</div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Usuários do Portal</span>
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="userSearch" placeholder="Buscar..." oninput="filterUsers()">
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Usuário</th>
+              <th>Matrícula</th>
+              <th>Setor</th>
+              <th>Nível</th>
+              <th>Acessos</th>
+              <th>Status</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="userTable"></tbody>
+          </table>
+        </div>
+        <div class="tfoot-bar">
+          <span id="userCount">0 usuários</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /portal-main -->
+</div><!-- /appScreen -->
+
+<!-- ══════════════════════════════════════════
+     MODAL — Edit user & permissions
+══════════════════════════════════════════ -->
+<div class="modal" id="mUser">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Editar Usuário</span>
+      <button class="icon-btn" onclick="closeModal('mUser')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="mUserErr" class="msg-err"></div>
+      <div id="mUserOk" class="msg-ok"></div>
+      <input type="hidden" id="uEditId">
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nome</label>
+          <input type="text" id="uNome">
+        </div>
+        <div class="form-field">
+          <label>Matrícula</label>
+          <input type="text" id="uMatricula">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nível de acesso</label>
+          <select id="uRole">
+            <option value="usuario">Usuário</option>
+            <option value="lider">Líder</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Status</label>
+          <select id="uStatus">
+            <option value="active">Ativo</option>
+            <option value="inactive">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field" style="margin-top:4px">
+        <label>Acessos liberados</label>
+        <div class="perm-grid" id="permGrid">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('mUser')">Cancelar</button>
+      <button class="btn btn-primary" id="savUserBtn" onclick="saveUser()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL — Self profile
+══════════════════════════════════════════ -->
+<div class="modal" id="mProfile">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Meu Perfil</span>
+      <button class="icon-btn" onclick="closeModal('mProfile')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="mProfErr" class="msg-err"></div>
+      <div id="mProfOk" class="msg-ok"></div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nome</label>
+          <input type="text" id="pNome">
+        </div>
+        <div class="form-field">
+          <label>E-mail</label>
+          <input type="email" id="pEmail" disabled style="opacity:.6;cursor:not-allowed">
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:6px 0 14px">
+      <div class="form-field">
+        <label>Nova senha (opcional)</label>
+        <input type="password" id="pNewPass" placeholder="Deixe em branco para não alterar">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('mProfile')">Cancelar</button>
+      <button class="btn btn-primary" id="savProfBtn" onclick="saveSelfProfile()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   ⚙️  CONFIGURAÇÃO — edite aqui
+══════════════════════════════════════════════ */
+
+// 1. Suas credenciais do Supabase CENTRAL (portal)
+const SUPABASE_URL  = 'https://SEU_PROJETO.supabase.co';
+const SUPABASE_KEY  = 'SUA_ANON_KEY_AQUI';
+
+// 2. Definição dos sistemas/tiles do portal
+//    - id: chave única usada em portal_permissions
+//    - url: onde redirecionar (pode ser github pages, etc.)
+//    - roles: quais roles veem este tile por padrão (além de permissão individual)
+//    - icon: SVG path(s)
+const SYSTEMS = [
+  {
+    id: 'equipamentos',
+    name: 'Controle de\nEquipamentos',
+    desc: 'Saída e retorno de equipamentos',
+    url: 'https://SEU_USUARIO.github.io/equipamentos/',
+    roles: ['admin','lider','usuario'],
+    icon: `<path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>`,
+  },
+  {
+    id: 'ocorrencias',
+    name: 'Registro de\nOcorrências',
+    desc: 'Registro e acompanhamento',
+    url: 'https://SEU_USUARIO.github.io/ocorrencias/',
+    roles: ['admin','lider','usuario'],
+    icon: `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>`,
+  },
+  // ── adicione novos sistemas aqui ──
+  // {
+  //   id: 'rh',
+  //   name: 'RH',
+  //   desc: 'Gestão de pessoal',
+  //   url: 'https://...',
+  //   roles: ['admin'],
+  //   icon: `<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>`,
+  // },
+];
+
+/* ══════════════════════════════════════════════
+   SUPABASE INIT
+══════════════════════════════════════════════ */
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let currentUser = null;
+let currentProfile = null;
+let allUsers = [];
+let editingUserId = null;
+
+/* ══════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════ */
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+  } else {
+    show('loginScreen');
+  }
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      await loadProfile();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null; currentProfile = null;
+      show('loginScreen'); hide('appScreen');
+    }
+  });
+})();
+
+async function loadProfile() {
+  const { data, error } = await sb
+    .from('portal_profiles')
+    .select('*, portal_permissions(system_id)')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (error || !data) {
+    // profile não existe ainda — criar placeholder
+    await sb.from('portal_profiles').upsert({
+      id: currentUser.id,
+      email: currentUser.email,
+      nome: currentUser.user_metadata?.nome || currentUser.email.split('@')[0],
+      role: 'usuario',
+      status: 'active',
+    });
+    await loadProfile();
+    return;
+  }
+
+  currentProfile = data;
+  renderApp();
+}
+
+/* ══════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════ */
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  $('tabLogin').style.display = isLogin ? '' : 'none';
+  $('tabRegister').style.display = isLogin ? 'none' : '';
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', isLogin ? i === 0 : i === 1));
+}
+
+async function doLogin() {
+  const email = v('loginEmail').trim();
+  const pass  = v('loginPass');
+  const err   = $('loginErr');
+  if (!email || !pass) { showEl(err,'Preencha e-mail e senha.'); return; }
+  err.style.display = 'none';
+  setBtnLoading($('loginBtn'), 'Entrando...');
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  resetBtn($('loginBtn'), 'Entrar', iconLogin);
+  if (error) showEl(err, error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message);
+}
+
+async function doRegister() {
+  const nome       = v('regNome').trim();
+  const email      = v('regEmail').trim();
+  const pass       = v('regPass');
+  const matricula  = v('regMatricula').trim();
+  const setor      = v('regSetor');
+  const turno      = v('regTurno');
+  const err = $('regErr'), ok = $('regOk');
+  err.style.display = 'none'; ok.style.display = 'none';
+  if (!nome || !email || !pass) { showEl(err,'Nome, e-mail e senha são obrigatórios.'); return; }
+  if (pass.length < 6) { showEl(err,'Senha deve ter ao menos 6 caracteres.'); return; }
+  setBtnLoading($('regBtn'), 'Cadastrando...');
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { nome, matricula, setor, turno } }
+  });
+  resetBtn($('regBtn'), 'Criar conta', iconUser);
+  if (error) { showEl(err, error.message); return; }
+
+  // Insert profile
+  await sb.from('portal_profiles').upsert({
+    id: data.user.id,
+    email,
+    nome,
+    matricula: matricula || null,
+    setor: setor || null,
+    turno: turno || null,
+    role: 'usuario',
+    status: 'inactive', // aguarda liberação pelo admin
+  });
+
+  showEl(ok, 'Conta criada! Aguarde a liberação pelo administrador antes de acessar.');
+  setTimeout(() => switchTab('login'), 3000);
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+/* ══════════════════════════════════════════════
+   RENDER APP
+══════════════════════════════════════════════ */
+function renderApp() {
+  const p = currentProfile;
+  if (!p) return;
+
+  // blocked?
+  if (p.status === 'inactive') {
+    hide('loginScreen');
+    show('loginScreen');
+    $('loginErr').style.display = 'block';
+    $('loginErr').textContent = 'Seu acesso ainda não foi liberado. Contate o administrador.';
+    sb.auth.signOut();
+    return;
+  }
+
+  // topbar
+  const initials = (p.nome || 'U').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  $('topAvatar').textContent = initials;
+  $('topName').textContent = (p.nome || '').split(' ')[0];
+  const roleLabel = {admin:'Administrador', lider:'Líder', usuario:'Usuário'};
+  $('topRole').textContent = roleLabel[p.role] || 'Usuário';
+  $('greetName').textContent = (p.nome || '').split(' ')[0];
+  $('greetSub').textContent = p.role === 'admin'
+    ? 'Você tem acesso total ao portal e à gestão de usuários.'
+    : 'Selecione um sistema para acessar.';
+
+  // Compute allowed systems
+  const allowedById = new Set((p.portal_permissions || []).map(pp => pp.system_id));
+  const isAdmin = p.role === 'admin';
+
+  const tiles = SYSTEMS.map(s => {
+    const allowed = isAdmin || s.roles.includes(p.role) || allowedById.has(s.id);
+    return { ...s, allowed };
+  });
+
+  renderTiles(tiles);
+
+  // admin table
+  if (isAdmin) {
+    show('adminSection');
+    loadUsers();
+  } else {
+    hide('adminSection');
+  }
+
+  hide('loginScreen');
+  $('appScreen').style.display = 'flex';
+}
+
+function renderTiles(tiles) {
+  $('tilesContainer').innerHTML = tiles.map(s => `
+    <div class="tile ${s.allowed ? '' : 'locked'}" onclick="${s.allowed ? `accessSystem('${s.id}','${s.url}')` : `toast('Você não tem acesso a este sistema.','err')`}" title="${s.allowed ? s.name.replace('\n',' ') : 'Acesso não liberado'}">
+      <div class="tile-icon-wrap">
+        <svg viewBox="0 0 24 24">${s.icon}</svg>
+      </div>
+      <div class="tile-name">${s.name.replace('\n','<br>')}</div>
+      <div class="tile-desc">${s.desc}</div>
+      ${!s.allowed ? `<span class="lock-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>` : ''}
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════════
+   SYSTEM ACCESS — SSO via token no URL
+   Os sistemas filhos devem ler este token e
+   validar via Supabase para auto-login
+══════════════════════════════════════════════ */
+async function accessSystem(id, baseUrl) {
+  try {
+    // Pega a sessão atual para passar o access_token ao sistema filho
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { toast('Sessão expirada. Faça login novamente.','err'); return; }
+    const token = session.access_token;
+    const refresh = session.refresh_token;
+    // Redireciona com tokens no hash (mesmo esquema do Supabase magic link)
+    const url = `${baseUrl}#access_token=${token}&refresh_token=${refresh}&type=portal_sso`;
+    window.open(url, '_blank');
+  } catch(e) {
+    toast('Erro ao abrir sistema.','err');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   ADMIN — USERS
+══════════════════════════════════════════════ */
+async function loadUsers() {
+  const { data, error } = await sb
+    .from('portal_profiles')
+    .select('*, portal_permissions(system_id)')
+    .order('nome');
+  if (error) { toast('Erro ao carregar usuários.','err'); return; }
+  allUsers = data || [];
+  renderUsers(allUsers);
+}
+
+function filterUsers() {
+  const q = v('userSearch').toLowerCase();
+  renderUsers(q ? allUsers.filter(u =>
+    (u.nome||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q) ||
+    (u.matricula||'').toLowerCase().includes(q)
+  ) : allUsers);
+}
+
+function renderUsers(list) {
+  const roleLabel  = {admin:'Admin',lider:'Líder',usuario:'Usuário'};
+  const roleBadge  = {admin:'b-admin',lider:'b-lider',usuario:'b-usuario'};
+  const setorLabel = {expedicao:'Expedição',recebimento:'Recebimento',logistica:'Logística',compras:'Compras',manutencao:'Manutenção',direcao:'Direção'};
+
+  $('userTable').innerHTML = list.map(u => {
+    const perms = (u.portal_permissions||[]).map(p => p.system_id);
+    const allSys = u.role === 'admin' ? SYSTEMS.map(s=>s.id) : perms;
+    const sysBadges = SYSTEMS.filter(s => allSys.includes(s.id) || s.roles.includes(u.role))
+      .map(s => `<span class="badge" style="background:var(--blue-lt);color:var(--wp-blue);margin:2px">${s.name.replace('\n',' ')}</span>`)
+      .join('') || '<span style="color:var(--text3);font-size:12px">Nenhum</span>';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center">
+          <div class="t-avatar">${(u.nome||'U').slice(0,2).toUpperCase()}</div>
+          <div>
+            <div style="font-weight:600">${esc(u.nome||'—')}</div>
+            <div style="font-size:11px;color:var(--text3)">${esc(u.email||'—')}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3)">${esc(u.matricula||'—')}</td>
+      <td>${esc(setorLabel[u.setor]||u.setor||'—')}</td>
+      <td><span class="badge ${roleBadge[u.role]||'b-usuario'}">${roleLabel[u.role]||'Usuário'}</span></td>
+      <td style="max-width:220px">${sysBadges}</td>
+      <td><span class="badge ${u.status==='active'?'b-active':'b-inactive'}">${u.status==='active'?'Ativo':'Inativo'}</span></td>
+      <td><button class="icon-btn" title="Editar" onclick="openUserModal('${u.id}')">${iconEdit}</button></td>
+    </tr>`;
+  }).join('');
+  $('userCount').textContent = `${list.length} usuário${list.length !== 1 ? 's' : ''}`;
+}
+
+function openUserModal(uid) {
+  const u = allUsers.find(x => x.id === uid);
+  if (!u) return;
+  editingUserId = uid;
+  $('uEditId').value  = uid;
+  $('uNome').value    = u.nome || '';
+  $('uMatricula').value = u.matricula || '';
+  $('uRole').value    = u.role || 'usuario';
+  $('uStatus').value  = u.status || 'active';
+  $('mUserErr').style.display = 'none';
+  $('mUserOk').style.display  = 'none';
+
+  // Permission checkboxes
+  const existingPerms = new Set((u.portal_permissions||[]).map(p => p.system_id));
+  const isAdmin = u.role === 'admin';
+  $('permGrid').innerHTML = SYSTEMS.map(s => {
+    const checked = isAdmin || s.roles.includes(u.role) || existingPerms.has(s.id);
+    const fromRole = isAdmin || s.roles.includes(u.role);
+    return `
+    <label class="perm-row ${checked?'checked':''}" id="prow_${s.id}">
+      <input type="checkbox" id="perm_${s.id}" ${checked?'checked':''} ${fromRole?'disabled title="Concedido pelo nível de acesso"':''}
+        onchange="this.closest('.perm-row').classList.toggle('checked',this.checked)">
+      <div class="perm-row-info">
+        <div class="perm-row-name">${s.name.replace('\n',' ')}</div>
+        <div class="perm-row-desc">${s.desc}${fromRole?' · via nível de acesso':''}</div>
+      </div>
+    </label>`;
+  }).join('');
+
+  openModal('mUser');
+}
+
+// Re-render checkboxes when role changes
+$('uRole').addEventListener('change', () => {
+  if (!editingUserId) return;
+  const u = allUsers.find(x => x.id === editingUserId);
+  if (!u) return;
+  const newRole = $('uRole').value;
+  const existingPerms = new Set((u.portal_permissions||[]).map(p => p.system_id));
+  SYSTEMS.forEach(s => {
+    const fromRole = newRole === 'admin' || s.roles.includes(newRole);
+    const cb = $(`perm_${s.id}`);
+    const row = $(`prow_${s.id}`);
+    if (!cb) return;
+    if (fromRole) {
+      cb.checked = true; cb.disabled = true;
+      cb.title = 'Concedido pelo nível de acesso';
+    } else {
+      cb.disabled = false; cb.title = '';
+      cb.checked = existingPerms.has(s.id);
+    }
+    row.classList.toggle('checked', cb.checked);
+  });
+});
+
+async function saveUser() {
+  const uid  = $('uEditId').value;
+  const btn  = $('savUserBtn');
+  const err  = $('mUserErr');
+  const ok   = $('mUserOk');
+  err.style.display = 'none'; ok.style.display = 'none';
+  setBtnLoading(btn, 'Salvando...');
+
+  // Update profile
+  const { error: profErr } = await sb.from('portal_profiles').update({
+    nome:       $('uNome').value.trim(),
+    matricula:  $('uMatricula').value.trim() || null,
+    role:       $('uRole').value,
+    status:     $('uStatus').value,
+  }).eq('id', uid);
+
+  if (profErr) { resetBtn(btn,'Salvar',iconSave); showEl(err, profErr.message); return; }
+
+  // Update permissions: delete old, insert new (only non-role-based)
+  await sb.from('portal_permissions').delete().eq('user_id', uid);
+  const newRole = $('uRole').value;
+  const toInsert = SYSTEMS
+    .filter(s => {
+      const fromRole = newRole === 'admin' || s.roles.includes(newRole);
+      if (fromRole) return false; // role já concede, não precisa registrar
+      const cb = $(`perm_${s.id}`);
+      return cb && cb.checked;
+    })
+    .map(s => ({ user_id: uid, system_id: s.id }));
+
+  if (toInsert.length) {
+    const { error: permErr } = await sb.from('portal_permissions').insert(toInsert);
+    if (permErr) { resetBtn(btn,'Salvar',iconSave); showEl(err, permErr.message); return; }
+  }
+
+  resetBtn(btn, 'Salvar', iconSave);
+  showEl(ok, 'Salvo com sucesso!');
+  toast('Usuário atualizado!','ok');
+  await loadUsers();
+  setTimeout(() => closeModal('mUser'), 1200);
+}
+
+/* ══════════════════════════════════════════════
+   SELF PROFILE
+══════════════════════════════════════════════ */
+function openSelfProfile() {
+  const p = currentProfile;
+  if (!p) return;
+  $('pNome').value  = p.nome || '';
+  $('pEmail').value = p.email || currentUser?.email || '';
+  $('pNewPass').value = '';
+  $('mProfErr').style.display = 'none';
+  $('mProfOk').style.display  = 'none';
+  openModal('mProfile');
+}
+
+async function saveSelfProfile() {
+  const btn = $('savProfBtn');
+  const err = $('mProfErr'), ok = $('mProfOk');
+  err.style.display = 'none'; ok.style.display = 'none';
+  setBtnLoading(btn, 'Salvando...');
+
+  const { error } = await sb.from('portal_profiles').update({
+    nome: $('pNome').value.trim(),
+  }).eq('id', currentUser.id);
+
+  const newPass = $('pNewPass').value;
+  if (newPass) {
+    if (newPass.length < 6) {
+      resetBtn(btn,'Salvar',iconSave);
+      showEl(err,'Senha deve ter ao menos 6 caracteres.');
+      return;
+    }
+    const { error: passErr } = await sb.auth.updateUser({ password: newPass });
+    if (passErr) { resetBtn(btn,'Salvar',iconSave); showEl(err, passErr.message); return; }
+  }
+
+  resetBtn(btn, 'Salvar', iconSave);
+  if (error) { showEl(err, error.message); return; }
+  showEl(ok, 'Perfil atualizado!');
+  toast('Perfil salvo!','ok');
+  await loadProfile();
+}
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function $(id)  { return document.getElementById(id) }
+function v(id)  { return $(id)?.value || '' }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function show(id) { $(id).style.display = '' }
+function hide(id) { $(id).style.display = 'none' }
+function openModal(id) {
+  $(id).classList.add('open');
+  $(id).addEventListener('click', e => { if(e.target === $(id)) closeModal(id) }, {once:true});
+}
+function closeModal(id) { $(id).classList.remove('open') }
+function showEl(el, msg) { el.textContent = msg; el.style.display = 'block' }
+function toast(msg, type='') {
+  const t = $('toast'); t.textContent = msg;
+  t.className = 'show ' + (type||'');
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3200);
+}
+function setBtnLoading(btn, txt) { btn.innerHTML = `<span class="spin"></span>${txt}`; btn.disabled = true }
+function resetBtn(btn, txt, icon='') { btn.innerHTML = `${icon}${txt}`; btn.disabled = false }
+
+const iconEdit = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const iconSave  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+const iconLogin = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
+const iconUser  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+</script>
+
+<!-- ══════════════════════════════════════════
+     SUPABASE SETUP INSTRUCTIONS (comment)
+     
+     Execute no SQL Editor do Supabase:
+
+     -- Tabela de perfis do portal
+     create table portal_profiles (
+       id uuid primary key references auth.users(id) on delete cascade,
+       email text,
+       nome text,
+       matricula text,
+       setor text,
+       turno text,
+       role text default 'usuario',   -- admin | lider | usuario
+       status text default 'inactive', -- active | inactive
+       created_at timestamptz default now()
+     );
+     alter table portal_profiles enable row level security;
+     create policy "users see own" on portal_profiles for select using (auth.uid() = id);
+     create policy "admin see all" on portal_profiles for select using (
+       exists (select 1 from portal_profiles where id = auth.uid() and role = 'admin')
+     );
+     create policy "admin update all" on portal_profiles for update using (
+       exists (select 1 from portal_profiles where id = auth.uid() and role = 'admin')
+     );
+     create policy "user update own" on portal_profiles for update using (auth.uid() = id);
+     create policy "insert own" on portal_profiles for insert with check (auth.uid() = id);
+
+     -- Tabela de permissões individuais por sistema
+     create table portal_permissions (
+       id bigint generated always as identity primary key,
+       user_id uuid references portal_profiles(id) on delete cascade,
+       system_id text not null,
+       created_at timestamptz default now(),
+       unique(user_id, system_id)
+     );
+     alter table portal_permissions enable row level security;
+     create policy "admin manage" on portal_permissions using (
+       exists (select 1 from portal_profiles where id = auth.uid() and role = 'admin')
+     );
+     create policy "user see own" on portal_permissions for select using (auth.uid() = user_id);
+
+     -- Promover primeiro usuário a admin (substitua pelo seu email):
+     update portal_profiles set role = 'admin', status = 'active'
+     where email = 'seuemail@empresa.com';
+══════════════════════════════════════════ -->
+</body>
+</html>

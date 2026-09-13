@@ -2,8 +2,19 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Nexus ERP — World Post</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B2FA6">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nexus ERP">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -171,6 +182,7 @@ tbody tr:hover td{background:#FAFBFF}
       <span class="topbar-label">World Post</span>
     </div>
     <div class="topbar-right">
+      <button class="btn btn-sm btn-ghost topbar-btn" id="installBtn" style="display:none" onclick="installApp()">⬇ Instalar App</button>
       <span class="badge b-amber">Modo de Teste — sem login</span>
     </div>
   </div>
@@ -374,6 +386,34 @@ const LOOKUP = { products:[], partners:[], warehouses:[], carriers:[], boms:[], 
   $('appScreen').style.display = 'flex';
   navigate('dashboard');
 })();
+
+/* ══════════════════════════════════════════════
+   PWA — service worker + instalar no Windows/celular
+══════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  $('installBtn').style.display = '';
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  $('installBtn').style.display = 'none';
+  toast('Nexus ERP instalado!', 'ok');
+});
+async function installApp() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  $('installBtn').style.display = 'none';
+}
 
 /* ══════════════════════════════════════════════
    NAVEGAÇÃO

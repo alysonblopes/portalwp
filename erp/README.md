@@ -59,27 +59,48 @@ Quando for usar dados reais de novo:
 3. Reative a tela e a lógica de login (o commit anterior a este tem a
    versão completa com SSO — usar como referência para restaurar).
 
-## Empacotar como app (Windows / celular)
+## PWA — instalar como app (Windows / Android / iOS)
 
-Como o ERP é um HTML/JS estático sem backend próprio (toda a lógica vive no
-Supabase), dá para embrulhar esse mesmo arquivo em:
+O Nexus ERP agora é uma **PWA instalável**. Arquivos adicionados:
 
-- **Windows**: [Electron](https://www.electronjs.org/) ou
-  [Tauri](https://tauri.app/) — abre `erp/index.html` numa janela nativa e
-  gera um `.exe`. Tauri gera instalador bem menor (usa o WebView do
-  Windows em vez de empacotar um Chromium inteiro).
-- **Celular (Android/iOS)**: [Capacitor](https://capacitorjs.com/) (da
-  equipe do Ionic) — mesma ideia, empacota o HTML num app nativo instalável
-  na loja ou via APK direto.
-- **Alternativa mais simples**: transformar em **PWA** (adicionar um
-  `manifest.json` + service worker) — instala como app no celular e no
-  Windows direto pelo navegador (Chrome/Edge), sem precisar gerar
-  executável nem publicar em loja. Menor esforço, funciona hoje.
+- `manifest.json` — nome, ícones e modo `standalone` (abre em janela
+  própria, sem barra de endereço do navegador).
+- `service-worker.js` — cacheia o "shell" do app (HTML, manifest, ícones)
+  pra abrir mais rápido e continuar funcionando offline na navegação;
+  chamadas ao Supabase continuam precisando de internet, é onde os dados
+  realmente moram.
+- `icons/` — ícones gerados (192, 512, 512 maskable, apple-touch-icon,
+  favicon), no azul da marca com o monograma "N".
 
-Nenhuma dessas opções está implementada ainda — nenhuma mudou o app em si.
-Antes de escolher uma, vale decidir: precisa de loja (Play Store/Microsoft
-Store) e ícone/instalador "de verdade", ou instalar como PWA já resolve o
-teste?
+Testado localmente (Chromium via Playwright): o service worker registra,
+ativa e cacheia os arquivos do shell corretamente.
+
+### Como instalar
+
+**Windows (Chrome ou Edge)**
+1. Abra `erp/index.html` publicado (precisa estar em `http://` ou
+   `https://` — PWA não instala abrindo o arquivo direto do disco).
+2. Clique no botão **"⬇ Instalar App"** que aparece no topo, ou no ícone
+   de instalação que o próprio navegador mostra na barra de endereço.
+3. Abre como um app de janela própria, com ícone e atalho — sem precisar
+   gerar `.exe`.
+
+**Android (Chrome)**: mesma coisa — botão "Instalar App" ou menu
+"Adicionar à tela inicial".
+
+**iPhone/iPad (Safari)**: o iOS não mostra o botão de instalar
+automaticamente (Apple não implementa esse evento) — use **Compartilhar →
+Adicionar à Tela de Início**. Os metadados pra isso (`apple-touch-icon`,
+`apple-mobile-web-app-capable`) já estão no `<head>`.
+
+### Se um dia precisar de app "de verdade" na loja
+
+O PWA cobre instalar/usar como app sem loja. Se depois quiser publicar na
+Play Store / Microsoft Store, ou embrulhar num instalador `.exe` clássico,
+dá pra reaproveitar o mesmo `erp/index.html` com
+[Tauri](https://tauri.app/)/[Electron](https://www.electronjs.org/)
+(Windows) ou [Capacitor](https://capacitorjs.com/) (Android/iOS) — não foi
+feito agora porque o PWA já resolve o teste com bem menos esforço.
 
 ## Extensões possíveis (próximos passos)
 

@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus ERP — World Post</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ══════════════════════════════════════════════
+   TOKENS (mesmo sistema visual do Portal World Post)
+══════════════════════════════════════════════ */
+:root{
+  --wp-blue:#1B2FA6;--wp-blue2:#152480;--wp-blue3:#0D1B6E;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:#DDE1ED;--border2:#C5CBDF;
+  --text:#111827;--text2:#4B5563;--text3:#9CA3AF;
+  --blue-lt:#EEF0FB;--blue-md:#C7CDFB;
+  --red:#991B1B;--red-lt:#FEE2E2;
+  --green:#166534;--green-lt:#DCFCE7;
+  --amber:#92600A;--amber-lt:#FEF3C7;
+  --gray-lt:#F3F4F6;
+  --radius:6px;--radius-lg:10px;--radius-xl:14px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg:0 20px 60px rgba(0,0,0,0.28);
+  --font:'Barlow',sans-serif;
+  --font-cond:'Barlow Condensed',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* login */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(140deg,var(--wp-blue3) 0%,var(--wp-blue) 55%,#2541C4 100%);position:relative;overflow:hidden}
+#loginScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.login-box{width:100%;max-width:420px;position:relative;z-index:1}
+.login-logo-wrap{text-align:center;margin-bottom:28px}
+.login-brand{color:#fff;font-family:var(--font-cond);font-size:32px;font-weight:700;letter-spacing:3px;line-height:1}
+.login-sub{color:rgba(255,255,255,.55);font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
+.login-card{background:rgba(255,255,255,0.97);border-radius:var(--radius-xl);padding:32px;box-shadow:var(--shadow-lg)}
+.login-card h2{font-family:var(--font-cond);font-size:21px;font-weight:700;letter-spacing:0.4px;color:var(--wp-blue);margin-bottom:3px}
+.login-card>p{font-size:13px;color:var(--text2);margin-bottom:22px}
+
+/* forms */
+.form-field{margin-bottom:14px}
+.form-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:14px;color:var(--text);background:#fff;outline:none;transition:border-color .15s}
+.form-field textarea{resize:vertical;font-family:var(--font)}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--wp-blue);box-shadow:0 0 0 3px rgba(27,47,166,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-cond);font-size:13px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;background:#fff;color:var(--text);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg);border-color:var(--border2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--wp-blue);color:#fff;border-color:var(--wp-blue)}
+.btn-primary:hover:not(:disabled){background:var(--wp-blue2);border-color:var(--wp-blue2)}
+.btn-full{width:100%}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
+.btn-ghost:hover{background:var(--blue-lt);color:var(--wp-blue);border-color:transparent}
+.btn-danger{color:var(--red);border-color:#FCA5A5}
+.btn-danger:hover{background:var(--red-lt)}
+
+.msg-err{background:var(--red-lt);color:var(--red);border:1.5px solid #FCA5A5;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.msg-ok{background:var(--green-lt);color:var(--green);border:1.5px solid #86EFAC;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.spin-dark{border-color:rgba(27,47,166,.2);border-top-color:var(--wp-blue)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* app shell */
+#appScreen{display:none;height:100vh;flex-direction:column}
+.topbar{height:58px;background:var(--wp-blue);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;box-shadow:0 2px 8px rgba(27,47,166,.4);z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-brand{color:#fff;font-family:var(--font-cond);font-size:19px;font-weight:700;letter-spacing:2px}
+.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.2)}
+.topbar-label{color:rgba(255,255,255,.6);font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border-radius:20px;padding:4px 14px 4px 4px}
+.uavatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-cond);font-size:11px;font-weight:700;background:rgba(255,255,255,.25);color:#fff;flex-shrink:0}
+.uname{font-size:13px;font-weight:600;color:#fff;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.urole{font-size:11px;color:rgba(255,255,255,.65)}
+.topbar-btn{color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.25)}
+
+.erp-shell{display:flex;flex:1;min-height:0}
+.erp-sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;overflow-y:auto}
+.nav-group{margin-bottom:16px}
+.nav-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:0 18px;margin-bottom:6px}
+.nav-link{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;color:var(--text2);text-decoration:none;cursor:pointer;border-left:3px solid transparent;user-select:none}
+.nav-link:hover{background:var(--blue-lt);color:var(--wp-blue)}
+.nav-link.active{background:var(--blue-lt);color:var(--wp-blue);border-left-color:var(--wp-blue);font-weight:600}
+.nav-link svg{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2}
+.erp-main{flex:1;min-width:0;padding:26px 30px 60px;overflow-y:auto}
+
+.view-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.view-head h2{font-family:var(--font-cond);font-size:22px;font-weight:700;letter-spacing:.3px}
+.view-head p{font-size:13px;color:var(--text2);margin-top:2px}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:26px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin-bottom:8px}
+.kpi-value{font-family:var(--font-cond);font-size:27px;font-weight:700;color:var(--wp-blue)}
+.kpi-value.warn{color:var(--amber)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);margin-bottom:20px}
+.card-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-title{font-family:var(--font-cond);font-size:15px;font-weight:700;letter-spacing:.3px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:520px}
+thead tr{background:var(--surface2)}
+th{text-align:left;padding:10px 16px;font-family:var(--font-cond);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);border-bottom:1.5px solid var(--border);white-space:nowrap}
+td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFF}
+
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.b-gray{background:var(--gray-lt);color:var(--text2)}
+.b-blue{background:var(--blue-lt);color:var(--wp-blue)}
+.b-amber{background:var(--amber-lt);color:var(--amber)}
+.b-green{background:var(--green-lt);color:var(--green)}
+.b-red{background:var(--red-lt);color:var(--red)}
+
+.icon-btn{width:30px;height:30px;border-radius:var(--radius);display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--border);background:#fff;cursor:pointer;color:var(--text3);transition:all .13s}
+.icon-btn:hover{border-color:var(--wp-blue);color:var(--wp-blue);background:var(--blue-lt)}
+.icon-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+
+.search-box{position:relative;min-width:200px}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);width:14px;height:14px;pointer-events:none}
+.search-box input{padding:9px 12px 9px 32px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:var(--text);outline:none}
+.search-box input:focus{border-color:var(--wp-blue)}
+
+.loading-box{padding:60px;text-align:center}
+.empty-box{padding:24px;text-align:center;color:var(--text3)}
+.mini-table{width:100%;border-collapse:collapse}
+.mini-table th{font-size:10px}
+.mini-table td,.mini-table th{padding:8px 10px}
+.total-line{margin-top:10px;text-align:right;font-family:var(--font-cond);font-weight:700;font-size:14px;color:var(--wp-blue)}
+.section-title{font-family:var(--font-cond);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin:18px 0 8px}
+.hint{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* modals */
+.modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-box{background:#fff;border-radius:var(--radius-xl);width:100%;max-width:460px;box-shadow:var(--shadow-lg);overflow:hidden;animation:modalIn .2s ease;max-height:90vh;display:flex;flex-direction:column}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.modal-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-family:var(--font-cond);font-size:17px;font-weight:700;letter-spacing:.3px}
+.modal-body{padding:22px;overflow-y:auto}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:10px;background:var(--surface2);flex-shrink:0}
+
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;padding:11px 18px;border-radius:var(--radius-lg);font-family:var(--font-cond);font-size:13px;font-weight:600;letter-spacing:.3px;box-shadow:var(--shadow-md);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;background:var(--text);color:#fff}
+#toast.show{transform:none;opacity:1}
+#toast.ok{background:var(--green);color:#fff}
+#toast.err{background:var(--red);color:#fff}
+
+@media(max-width:860px){
+  .erp-shell{flex-direction:column}
+  .erp-sidebar{width:100%;display:flex;overflow-x:auto;white-space:nowrap;padding:6px 8px}
+  .nav-group{display:flex;margin-bottom:0}
+  .nav-group-label{display:none}
+  .nav-link{border-left:none;border-bottom:3px solid transparent;padding:8px 12px}
+  .nav-link.active{border-left:none;border-bottom-color:var(--wp-blue)}
+  .erp-main{padding:18px 14px 40px}
+  .form-row{grid-template-columns:1fr}
+  .topbar-label{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo-wrap">
+      <div class="login-brand">NEXUS ERP</div>
+      <div class="login-sub">World Post · Fábrica · Logística · Contábil</div>
+    </div>
+    <div class="login-card">
+      <h2>Bem-vindo</h2>
+      <p>Acesse com suas credenciais do Portal World Post</p>
+      <div id="loginErr" class="msg-err"></div>
+      <div class="form-field">
+        <label>E-mail</label>
+        <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label>Senha</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">Entrar</button>
+      <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:14px">Prefira acessar pelo tile "Nexus ERP" dentro do Portal World Post.</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">NEXUS ERP</span>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">World Post</span>
+    </div>
+    <div class="topbar-right">
+      <a class="btn btn-sm btn-ghost topbar-btn" href="../index.html">← Portal</a>
+      <div class="user-pill">
+        <div class="uavatar" id="topAvatar">--</div>
+        <div>
+          <div class="uname" id="topName">—</div>
+          <div class="urole" id="topRole">—</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-ghost topbar-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="erp-shell">
+    <div class="erp-sidebar" id="sidebar"></div>
+    <div class="erp-main" id="viewRoot"></div>
+  </div>
+</div>
+
+<!-- MODAL — Formulário genérico de cadastro -->
+<div class="modal" id="mForm">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title" id="mFormTitle">Novo Registro</span>
+      <button class="icon-btn" onclick="closeModal('mForm')">×</button>
+    </div>
+    <div class="modal-body" id="mFormBody"></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('mForm')">Cancelar</button>
+      <button class="btn btn-primary" id="mFormSaveBtn" onclick="saveCrudForm()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL — Quantidade (usado em receber / expedir / apontar produção) -->
+<div class="modal" id="mQty">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-head">
+      <span class="modal-title" id="mQtyTitle">Quantidade</span>
+      <button class="icon-btn" onclick="closeModal('mQty')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint" id="mQtyHint" style="margin-bottom:10px"></p>
+      <div class="form-field">
+        <label>Quantidade</label>
+        <input type="number" id="mQtyInput" min="0.001" step="0.001">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('mQty')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmQtyModal()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL — Pedido de Compra -->
+<div class="modal" id="mPO">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-head"><span class="modal-title">Novo Pedido de Compra</span><button class="icon-btn" onclick="closeModal('mPO')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field"><label>Fornecedor</label><select id="poSupplier"></select></div>
+        <div class="form-field"><label>Depósito de entrada</label><select id="poWarehouse"></select></div>
+      </div>
+      <div class="form-field"><label>Observações</label><textarea id="poNotes" rows="2"></textarea></div>
+      <div class="section-title">Itens do pedido</div>
+      <div id="poItemsTable"></div>
+      <button class="btn btn-sm" style="margin-top:8px" onclick="addPOItemRow()">+ Adicionar item</button>
+      <div class="total-line" id="poItemsTotal">Total: R$ 0,00</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mPO')">Cancelar</button><button class="btn btn-primary" onclick="savePO()">Salvar Pedido</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Detalhe / Recebimento de Compra -->
+<div class="modal" id="mPODetail">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-head"><span class="modal-title" id="mPODetailTitle">Pedido de Compra</span><button class="icon-btn" onclick="closeModal('mPODetail')">×</button></div>
+    <div class="modal-body" id="mPODetailBody"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mPODetail')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Pedido de Venda -->
+<div class="modal" id="mSO">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-head"><span class="modal-title">Novo Pedido de Venda</span><button class="icon-btn" onclick="closeModal('mSO')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field"><label>Cliente</label><select id="soCustomer"></select></div>
+        <div class="form-field"><label>Depósito de saída</label><select id="soWarehouse"></select></div>
+      </div>
+      <div class="form-field"><label>Transportadora</label><select id="soCarrier"></select></div>
+      <div class="form-field"><label>Observações</label><textarea id="soNotes" rows="2"></textarea></div>
+      <div class="section-title">Itens do pedido</div>
+      <div id="soItemsTable"></div>
+      <button class="btn btn-sm" style="margin-top:8px" onclick="addSOItemRow()">+ Adicionar item</button>
+      <div class="total-line" id="soItemsTotal">Total: R$ 0,00</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mSO')">Cancelar</button><button class="btn btn-primary" onclick="saveSO()">Salvar Pedido</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Detalhe / Expedição de Venda -->
+<div class="modal" id="mSODetail">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-head"><span class="modal-title" id="mSODetailTitle">Pedido de Venda</span><button class="icon-btn" onclick="closeModal('mSODetail')">×</button></div>
+    <div class="modal-body" id="mSODetailBody"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mSODetail')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Ajuste manual de estoque -->
+<div class="modal" id="mAdjust">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Ajuste de Estoque</span><button class="icon-btn" onclick="closeModal('mAdjust')">×</button></div>
+    <div class="modal-body">
+      <div class="form-field"><label>Tipo</label>
+        <select id="adjType"><option value="ajuste_entrada">Entrada (ajuste)</option><option value="ajuste_saida">Saída (ajuste)</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Produto</label><select id="adjProduct"></select></div>
+        <div class="form-field"><label>Depósito</label><select id="adjWarehouse"></select></div>
+      </div>
+      <div class="form-field"><label>Quantidade</label><input type="number" id="adjQty" min="0.001" step="0.001"></div>
+      <div class="form-field"><label>Motivo / observação</label><textarea id="adjNotes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mAdjust')">Cancelar</button><button class="btn btn-primary" onclick="saveAdjust()">Confirmar</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Estrutura de Produto (BOM) -->
+<div class="modal" id="mBOM">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Nova Estrutura (BOM)</span><button class="icon-btn" onclick="closeModal('mBOM')">×</button></div>
+    <div class="modal-body">
+      <div class="form-field"><label>Produto acabado</label><select id="bomProduct"></select></div>
+      <div class="form-field"><label>Nome da estrutura</label><input type="text" id="bomName" placeholder="Ex: Estrutura padrão v1"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mBOM')">Cancelar</button><button class="btn btn-primary" onclick="saveBOM()">Criar e editar itens</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Detalhe BOM (itens) -->
+<div class="modal" id="mBOMDetail">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-head"><span class="modal-title" id="mBOMDetailTitle">Estrutura</span><button class="icon-btn" onclick="closeModal('mBOMDetail')">×</button></div>
+    <div class="modal-body" id="mBOMDetailBody"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mBOMDetail')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Ordem de Produção -->
+<div class="modal" id="mOP">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Nova Ordem de Produção</span><button class="icon-btn" onclick="closeModal('mOP')">×</button></div>
+    <div class="modal-body">
+      <div class="form-field"><label>Produto acabado</label><select id="opProduct" onchange="onOPProductChange()"></select></div>
+      <div class="form-field"><label>Estrutura (BOM)</label><select id="opBom"></select></div>
+      <div class="form-row">
+        <div class="form-field"><label>Depósito</label><select id="opWarehouse"></select></div>
+        <div class="form-field"><label>Quantidade planejada</label><input type="number" id="opQty" min="0.001" step="0.001"></div>
+      </div>
+      <div class="form-field"><label>Observações</label><textarea id="opNotes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mOP')">Cancelar</button><button class="btn btn-primary" onclick="saveOP()">Criar Ordem</button></div>
+  </div>
+</div>
+
+<!-- MODAL — Lançamento Contábil -->
+<div class="modal" id="mJournal">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-head"><span class="modal-title">Novo Lançamento Contábil</span><button class="icon-btn" onclick="closeModal('mJournal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field"><label>Data</label><input type="date" id="jeDate"></div>
+        <div class="form-field"><label>Histórico</label><input type="text" id="jeDesc" placeholder="Descrição do lançamento"></div>
+      </div>
+      <div class="section-title">Partidas (débito / crédito)</div>
+      <div id="jeLinesTable"></div>
+      <button class="btn btn-sm" style="margin-top:8px" onclick="addJELineRow()">+ Adicionar partida</button>
+      <div class="total-line" id="jeLinesTotal">Débito: R$ 0,00 · Crédito: R$ 0,00</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('mJournal')">Cancelar</button><button class="btn btn-primary" onclick="saveJournal()">Registrar Lançamento</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   CONFIG — mesmo projeto Supabase do Portal
+══════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://pdmfvaqvfdwdpnwoaapm.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkbWZ2YXF2ZmR3ZHBud29hYXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDYzODQsImV4cCI6MjA5NjY4MjM4NH0.GtAH5HRk2WAOFSVsJjfdqOauhV_nZ6o38XswrZH4hWo';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { detectSessionInUrl: false } });
+
+let currentUser = null;
+let currentProfile = null;
+let isManager = false;
+let currentView = 'dashboard';
+const LOOKUP = { products:[], partners:[], warehouses:[], carriers:[], boms:[], accounts:[] };
+
+/* ══════════════════════════════════════════════
+   BOOT — SSO vindo do Portal (token no hash) ou sessão local
+══════════════════════════════════════════════ */
+(async () => {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token=')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if (access_token && refresh_token) {
+      try { await sb.auth.setSession({ access_token, refresh_token }); } catch(e) {}
+    }
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+  } else {
+    show('loginScreen');
+  }
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      currentUser = null; currentProfile = null;
+      hide('appScreen'); show('loginScreen');
+    }
+  });
+})();
+
+async function doLogin() {
+  const email = v('loginEmail'), pass = v('loginPass');
+  const btn = $('loginBtn');
+  $('loginErr').style.display = 'none';
+  if (!email || !pass) { showEl($('loginErr'), 'Preencha e-mail e senha.'); return; }
+  setBtnLoading(btn, 'Entrando...');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  resetBtn(btn, 'Entrar');
+  if (error) { showEl($('loginErr'), 'E-mail ou senha inválidos.'); return; }
+  currentUser = data.user;
+  await loadProfile();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+async function loadProfile() {
+  const { data, error } = await sb.from('portal_profiles').select('*').eq('id', currentUser.id).single();
+  if (error || !data) {
+    showEl($('loginErr'), 'Perfil não encontrado. Acesse pelo Portal World Post.');
+    await sb.auth.signOut();
+    return;
+  }
+  if (data.status !== 'active') {
+    showEl($('loginErr'), 'Seu acesso ainda não foi liberado. Contate o administrador.');
+    await sb.auth.signOut();
+    return;
+  }
+  currentProfile = data;
+  isManager = data.role === 'admin' || data.role === 'lider';
+  renderShell();
+  await loadLookups();
+  hide('loginScreen');
+  $('appScreen').style.display = 'flex';
+  navigate('dashboard');
+}
+
+/* ══════════════════════════════════════════════
+   NAVEGAÇÃO
+══════════════════════════════════════════════ */
+const NAV = [
+  { label:'Visão Geral', items:[
+    { id:'dashboard', label:'Dashboard', icon:'<path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/>' },
+  ]},
+  { label:'Cadastros', items:[
+    { id:'produtos', label:'Produtos', icon:'<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/>' },
+    { id:'parceiros', label:'Parceiros', icon:'<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75M22 21v-2a4 4 0 00-3-3.87"/>' },
+    { id:'depositos', label:'Depósitos', icon:'<path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M9 21V12h6v9"/>' },
+    { id:'transportadoras', label:'Transportadoras', icon:'<rect x="1" y="6" width="14" height="12" rx="1"/><path d="M15 10h4l3 3v5h-7z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/>' },
+  ]},
+  { label:'Compras', items:[
+    { id:'compras', label:'Pedidos de Compra', icon:'<circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.6a2 2 0 002-1.6L23 6H6"/>' },
+  ]},
+  { label:'Estoque · Logística', items:[
+    { id:'estoque-saldo', label:'Saldo de Estoque', icon:'<path d="M12 2l9 4.9V17L12 22l-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/>' },
+    { id:'estoque-mov', label:'Movimentações', icon:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>' },
+  ]},
+  { label:'Produção (Fábrica)', items:[
+    { id:'producao-bom', label:'Estruturas (BOM)', icon:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/>' },
+    { id:'producao-op', label:'Ordens de Produção', icon:'<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>' },
+  ]},
+  { label:'Vendas', items:[
+    { id:'vendas', label:'Pedidos de Venda', icon:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>' },
+  ]},
+  { label:'Financeiro / Contábil', items:[
+    { id:'financeiro-plano', label:'Plano de Contas', icon:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>' },
+    { id:'financeiro-lancamentos', label:'Lançamentos', icon:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
+    { id:'financeiro-razao', label:'Razão / Balancete', icon:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>' },
+  ]},
+];
+
+const VIEWS = {
+  'dashboard': renderDashboard,
+  'produtos': () => renderCrud('produtos'),
+  'parceiros': () => renderCrud('parceiros'),
+  'depositos': () => renderCrud('depositos'),
+  'transportadoras': () => renderCrud('transportadoras'),
+  'compras': renderCompras,
+  'estoque-saldo': renderEstoqueSaldo,
+  'estoque-mov': renderEstoqueMov,
+  'producao-bom': renderProducaoBom,
+  'producao-op': renderProducaoOP,
+  'vendas': renderVendas,
+  'financeiro-plano': () => renderCrud('contas'),
+  'financeiro-lancamentos': renderLancamentos,
+  'financeiro-razao': renderRazao,
+};
+
+function renderShell() {
+  const initials = (currentProfile.nome || 'U').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  $('topAvatar').textContent = initials;
+  $('topName').textContent = (currentProfile.nome || '').split(' ')[0] || currentProfile.email;
+  const roleLabel = { admin:'Administrador', lider:'Líder', usuario:'Usuário' };
+  $('topRole').textContent = roleLabel[currentProfile.role] || 'Usuário';
+
+  $('sidebar').innerHTML = NAV.map(group => `
+    <div class="nav-group">
+      <div class="nav-group-label">${group.label}</div>
+      ${group.items.map(it => `
+        <div class="nav-link" data-view="${it.id}" onclick="navigate('${it.id}')">
+          <svg viewBox="0 0 24 24">${it.icon}</svg>
+          <span>${it.label}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function navigate(id) {
+  currentView = id;
+  document.querySelectorAll('.nav-link').forEach(a => a.classList.toggle('active', a.dataset.view === id));
+  $('viewRoot').innerHTML = `<div class="loading-box"><span class="spin spin-dark"></span></div>`;
+  (VIEWS[id] || renderDashboard)();
+}
+
+/* ══════════════════════════════════════════════
+   LOOKUPS (cache de listas usadas nos selects)
+══════════════════════════════════════════════ */
+async function loadLookups() {
+  const [p, pa, w, c, b, ac] = await Promise.all([
+    sb.from('erp_products').select('*').order('name'),
+    sb.from('erp_partners').select('*').order('name'),
+    sb.from('erp_warehouses').select('*').order('name'),
+    sb.from('erp_carriers').select('*').order('name'),
+    sb.from('erp_boms').select('*, erp_products(name)').order('name'),
+    sb.from('erp_chart_of_accounts').select('*').order('code'),
+  ]);
+  LOOKUP.products = p.data || [];
+  LOOKUP.partners = pa.data || [];
+  LOOKUP.warehouses = w.data || [];
+  LOOKUP.carriers = c.data || [];
+  LOOKUP.boms = b.data || [];
+  LOOKUP.accounts = ac.data || [];
+}
+
+function findProduct(id) { return LOOKUP.products.find(p => p.id === id); }
+function productLabel(p) { return `${p.sku} — ${p.name}`; }
+
+function lookupOptions(kind, selected) {
+  let list = [], render = x => x.name;
+  if (kind === 'products') { list = LOOKUP.products; render = productLabel; }
+  else if (kind === 'produtos_acabados') { list = LOOKUP.products.filter(p => p.type === 'produto_acabado'); render = productLabel; }
+  else if (kind === 'componentes') { list = LOOKUP.products; render = productLabel; }
+  else if (kind === 'suppliers') { list = LOOKUP.partners.filter(p => p.type !== 'cliente'); }
+  else if (kind === 'customers') { list = LOOKUP.partners.filter(p => p.type !== 'fornecedor'); }
+  else if (kind === 'warehouses') { list = LOOKUP.warehouses; }
+  else if (kind === 'carriers') { list = LOOKUP.carriers; }
+  return list.map(o => `<option value="${o.id}" ${o.id===selected?'selected':''}>${esc(render(o))}</option>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   UTILITÁRIOS
+══════════════════════════════════════════════ */
+function $(id) { return document.getElementById(id); }
+function v(id) { return $(id)?.value || ''; }
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function show(id) { $(id).style.display = ''; }
+function hide(id) { $(id).style.display = 'none'; }
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+function showEl(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function toast(msg, type='') {
+  const t = $('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.className = type, 2600);
+}
+function setBtnLoading(btn, txt) { btn.dataset.orig = btn.innerHTML; btn.innerHTML = `<span class="spin"></span>${txt}`; btn.disabled = true; }
+function resetBtn(btn, txt) { btn.innerHTML = txt; btn.disabled = false; }
+function money(n) { return 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('pt-BR') : '—'; }
+function emptyRow(cols) { return `<tr><td colspan="${cols}" class="empty-box">Nenhum registro encontrado.</td></tr>`; }
+
+const iconTrash = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
+const iconEdit  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+function statusBadge(s) {
+  const map = {
+    rascunho:['Rascunho','gray'], aprovado:['Aprovado','blue'],
+    recebido_parcial:['Parcial','amber'], recebido:['Recebido','green'], cancelado:['Cancelado','red'],
+    confirmado:['Confirmado','blue'], expedido_parcial:['Parcial','amber'], expedido:['Expedido','green'],
+    planejada:['Planejada','gray'], em_producao:['Em produção','amber'], concluida:['Concluída','green'],
+  };
+  const [label, color] = map[s] || [s, 'gray'];
+  return `<span class="badge b-${color}">${label}</span>`;
+}
+
+let qtyModalCallback = null;
+function openQtyModal(title, hint, max, cb) {
+  $('mQtyTitle').textContent = title;
+  $('mQtyHint').textContent = hint;
+  $('mQtyInput').value = '';
+  $('mQtyInput').max = max || '';
+  qtyModalCallback = cb;
+  openModal('mQty');
+}
+function confirmQtyModal() {
+  const qty = Number($('mQtyInput').value);
+  if (!qty || qty <= 0) { toast('Informe uma quantidade válida.', 'err'); return; }
+  closeModal('mQty');
+  qtyModalCallback(qty);
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════ */
+async function renderDashboard() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Dashboard</h2><p>Visão geral de fábrica, logística e financeiro</p></div></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Valor em estoque</div><div class="kpi-value" id="kpiStockValue">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Pedidos de compra em aberto</div><div class="kpi-value" id="kpiOpenPO">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Pedidos de venda em aberto</div><div class="kpi-value" id="kpiOpenSO">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ordens de produção ativas</div><div class="kpi-value" id="kpiActiveOP">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Produtos abaixo do estoque mínimo</span></div>
+      <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Produto</th><th>Saldo</th><th>Mínimo</th></tr></thead><tbody id="lowStockBody"><tr><td colspan="4" class="empty-box">Carregando...</td></tr></tbody></table></div>
+    </div>`;
+
+  const [balRes, poRes, soRes, opRes] = await Promise.all([
+    sb.from('erp_stock_balance').select('*'),
+    sb.from('erp_purchase_orders').select('id,status'),
+    sb.from('erp_sales_orders').select('id,status'),
+    sb.from('erp_production_orders').select('id,status'),
+  ]);
+  const balances = balRes.data || [];
+  const balByProduct = {};
+  balances.forEach(b => { balByProduct[b.product_id] = (balByProduct[b.product_id] || 0) + Number(b.qty_on_hand || 0); });
+
+  const stockValue = balances.reduce((s, b) => {
+    const p = findProduct(b.product_id);
+    return s + Number(b.qty_on_hand || 0) * Number(p?.cost_price || 0);
+  }, 0);
+  const openPO = (poRes.data || []).filter(p => !['recebido','cancelado'].includes(p.status)).length;
+  const openSO = (soRes.data || []).filter(p => !['expedido','cancelado'].includes(p.status)).length;
+  const activeOP = (opRes.data || []).filter(p => ['planejada','em_producao'].includes(p.status)).length;
+
+  $('kpiStockValue').textContent = money(stockValue);
+  $('kpiOpenPO').textContent = openPO;
+  $('kpiOpenSO').textContent = openSO;
+  $('kpiActiveOP').textContent = activeOP;
+
+  const lowStock = LOOKUP.products.filter(p => Number(p.min_stock) > 0 && (balByProduct[p.id] || 0) < Number(p.min_stock));
+  $('lowStockBody').innerHTML = lowStock.length ? lowStock.map(p => `
+    <tr><td>${esc(p.sku)}</td><td>${esc(p.name)}</td><td>${(balByProduct[p.id]||0).toLocaleString('pt-BR')}</td><td>${Number(p.min_stock).toLocaleString('pt-BR')}</td></tr>
+  `).join('') : emptyRow(4);
+}
+
+/* ══════════════════════════════════════════════
+   CRUD GENÉRICO — Produtos, Parceiros, Depósitos,
+   Transportadoras, Plano de Contas
+══════════════════════════════════════════════ */
+const CRUD = {
+  produtos: {
+    table:'erp_products', title:'Produtos', singular:'Produto', orderBy:'name',
+    columns:[
+      {key:'sku',label:'SKU'}, {key:'name',label:'Nome'},
+      {key:'type',label:'Tipo', render:r=>({materia_prima:'Matéria-prima',produto_acabado:'Produto acabado',revenda:'Revenda',servico:'Serviço'})[r.type]||r.type},
+      {key:'unit',label:'UN'},
+      {key:'cost_price',label:'Custo', render:r=>money(r.cost_price)},
+      {key:'sale_price',label:'Venda', render:r=>money(r.sale_price)},
+      {key:'active',label:'Status', render:r=>r.active?'<span class="badge b-green">Ativo</span>':'<span class="badge b-gray">Inativo</span>'},
+    ],
+    fields:[
+      {key:'sku',label:'SKU',type:'text',required:true},
+      {key:'name',label:'Nome',type:'text',required:true},
+      {key:'type',label:'Tipo',type:'select',required:true,options:[
+        {value:'materia_prima',label:'Matéria-prima'},{value:'produto_acabado',label:'Produto acabado'},
+        {value:'revenda',label:'Revenda'},{value:'servico',label:'Serviço'}]},
+      {key:'unit',label:'Unidade',type:'text',required:true,default:'UN'},
+      {key:'cost_price',label:'Preço de custo',type:'number',step:'0.01',default:0},
+      {key:'sale_price',label:'Preço de venda',type:'number',step:'0.01',default:0},
+      {key:'min_stock',label:'Estoque mínimo',type:'number',step:'0.001',default:0},
+      {key:'description',label:'Descrição',type:'textarea'},
+      {key:'active',label:'Ativo',type:'checkbox',default:true},
+    ],
+  },
+  parceiros: {
+    table:'erp_partners', title:'Parceiros (Clientes / Fornecedores)', singular:'Parceiro', orderBy:'name',
+    columns:[
+      {key:'name',label:'Nome'},
+      {key:'type',label:'Tipo', render:r=>({cliente:'Cliente',fornecedor:'Fornecedor',ambos:'Cliente/Fornecedor'})[r.type]||r.type},
+      {key:'document',label:'CNPJ/CPF'}, {key:'email',label:'E-mail'}, {key:'phone',label:'Telefone'},
+      {key:'active',label:'Status', render:r=>r.active?'<span class="badge b-green">Ativo</span>':'<span class="badge b-gray">Inativo</span>'},
+    ],
+    fields:[
+      {key:'name',label:'Nome / Razão Social',type:'text',required:true},
+      {key:'type',label:'Tipo',type:'select',required:true,options:[
+        {value:'cliente',label:'Cliente'},{value:'fornecedor',label:'Fornecedor'},{value:'ambos',label:'Cliente e Fornecedor'}]},
+      {key:'document',label:'CNPJ/CPF',type:'text'},
+      {key:'email',label:'E-mail',type:'email'},
+      {key:'phone',label:'Telefone',type:'text'},
+      {key:'address',label:'Endereço',type:'text'},
+      {key:'city',label:'Cidade',type:'text'},
+      {key:'state',label:'UF',type:'text'},
+      {key:'active',label:'Ativo',type:'checkbox',default:true},
+    ],
+  },
+  depositos: {
+    table:'erp_warehouses', title:'Depósitos / Armazéns', singular:'Depósito', orderBy:'name',
+    columns:[
+      {key:'code',label:'Código'}, {key:'name',label:'Nome'}, {key:'location',label:'Localização'},
+      {key:'active',label:'Status', render:r=>r.active?'<span class="badge b-green">Ativo</span>':'<span class="badge b-gray">Inativo</span>'},
+    ],
+    fields:[
+      {key:'code',label:'Código',type:'text',required:true},
+      {key:'name',label:'Nome',type:'text',required:true},
+      {key:'location',label:'Localização',type:'text'},
+      {key:'active',label:'Ativo',type:'checkbox',default:true},
+    ],
+  },
+  transportadoras: {
+    table:'erp_carriers', title:'Transportadoras', singular:'Transportadora', orderBy:'name',
+    columns:[
+      {key:'name',label:'Nome'}, {key:'document',label:'CNPJ'}, {key:'phone',label:'Telefone'},
+      {key:'active',label:'Status', render:r=>r.active?'<span class="badge b-green">Ativa</span>':'<span class="badge b-gray">Inativa</span>'},
+    ],
+    fields:[
+      {key:'name',label:'Nome',type:'text',required:true},
+      {key:'document',label:'CNPJ',type:'text'},
+      {key:'phone',label:'Telefone',type:'text'},
+      {key:'active',label:'Ativa',type:'checkbox',default:true},
+    ],
+  },
+  contas: {
+    table:'erp_chart_of_accounts', title:'Plano de Contas', singular:'Conta', orderBy:'code', managerOnly:true,
+    columns:[
+      {key:'code',label:'Código'}, {key:'name',label:'Nome'},
+      {key:'type',label:'Natureza', render:r=>({ativo:'Ativo',passivo:'Passivo',patrimonio_liquido:'Patrimônio Líquido',receita:'Receita',despesa:'Despesa'})[r.type]||r.type},
+      {key:'active',label:'Status', render:r=>r.active?'<span class="badge b-green">Ativa</span>':'<span class="badge b-gray">Inativa</span>'},
+    ],
+    fields:[
+      {key:'code',label:'Código',type:'text',required:true},
+      {key:'name',label:'Nome',type:'text',required:true},
+      {key:'type',label:'Natureza',type:'select',required:true,options:[
+        {value:'ativo',label:'Ativo'},{value:'passivo',label:'Passivo'},
+        {value:'patrimonio_liquido',label:'Patrimônio Líquido'},{value:'receita',label:'Receita'},{value:'despesa',label:'Despesa'}]},
+      {key:'parent_id',label:'Conta pai',type:'lookup',lookupKey:'accounts',labelFn:a=>`${a.code} — ${a.name}`},
+      {key:'active',label:'Ativa',type:'checkbox',default:true},
+    ],
+  },
+};
+
+let crudState = { key:null, cfg:null, rows:[] };
+
+async function renderCrud(key) {
+  const cfg = CRUD[key];
+  crudState = { key, cfg, rows: [] };
+  const canWrite = !cfg.managerOnly || isManager;
+  $('viewRoot').innerHTML = `
+    <div class="view-head">
+      <div><h2>${cfg.title}</h2></div>
+      <div class="toolbar">
+        <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Buscar..." oninput="filterCrud(this.value)"></div>
+        ${canWrite ? `<button class="btn btn-primary" onclick="openCrudForm('${key}')">+ Novo ${cfg.singular}</button>` : ''}
+      </div>
+    </div>
+    <div class="card"><div class="table-wrap"><table><thead><tr>${cfg.columns.map(c=>`<th>${c.label}</th>`).join('')}<th></th></tr></thead><tbody id="crudBody"><tr><td colspan="99" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  await reloadCrud();
+}
+
+async function reloadCrud() {
+  const { cfg } = crudState;
+  const { data, error } = await sb.from(cfg.table).select('*').order(cfg.orderBy || 'created_at', { ascending: cfg.orderBy === 'code' || cfg.orderBy === 'name' });
+  if (error) { toast('Erro ao carregar dados: ' + error.message, 'err'); return; }
+  crudState.rows = data || [];
+  renderCrudRows(crudState.rows);
+}
+
+function renderCrudRows(rows) {
+  const { cfg, key } = crudState;
+  const canWrite = !cfg.managerOnly || isManager;
+  $('crudBody').innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      ${cfg.columns.map(c => `<td>${c.render ? c.render(r) : esc(r[c.key] ?? '')}</td>`).join('')}
+      <td style="text-align:right;white-space:nowrap">
+        ${canWrite ? `<button class="icon-btn" onclick="openCrudForm('${key}','${r.id}')" title="Editar">${iconEdit}</button>` : ''}
+        ${isManager ? `<button class="icon-btn danger" onclick="deleteCrudRow('${r.id}')" title="Excluir">${iconTrash}</button>` : ''}
+      </td>
+    </tr>`).join('') : emptyRow(cfg.columns.length + 1);
+}
+
+function filterCrud(q) {
+  q = q.toLowerCase();
+  const rows = crudState.rows.filter(r => JSON.stringify(r).toLowerCase().includes(q));
+  renderCrudRows(rows);
+}
+
+function fieldHtml(f, row) {
+  const val = row ? row[f.key] : (f.default !== undefined ? f.default : '');
+  const id = 'f_' + f.key;
+  if (f.type === 'select') {
+    return `<div class="form-field"><label>${f.label}</label><select id="${id}">${f.options.map(o=>`<option value="${o.value}" ${val===o.value?'selected':''}>${esc(o.label)}</option>`).join('')}</select></div>`;
+  }
+  if (f.type === 'lookup') {
+    const list = LOOKUP[f.lookupKey] || [];
+    return `<div class="form-field"><label>${f.label}</label><select id="${id}"><option value="">—</option>${list.filter(o=>!row||o.id!==row.id).map(o=>`<option value="${o.id}" ${val===o.id?'selected':''}>${esc(f.labelFn(o))}</option>`).join('')}</select></div>`;
+  }
+  if (f.type === 'textarea') return `<div class="form-field"><label>${f.label}</label><textarea id="${id}" rows="2">${esc(val||'')}</textarea></div>`;
+  if (f.type === 'checkbox') return `<div class="form-field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none"><input type="checkbox" id="${id}" ${val?'checked':''} style="width:16px;height:16px;flex-shrink:0"> ${f.label}</label></div>`;
+  return `<div class="form-field"><label>${f.label}</label><input type="${f.type}" id="${id}" value="${esc(val ?? '')}" ${f.step?`step="${f.step}"`:''}></div>`;
+}
+
+function openCrudForm(key, id) {
+  const cfg = CRUD[key];
+  const row = id ? crudState.rows.find(r => r.id === id) : null;
+  $('mFormTitle').textContent = (row ? 'Editar ' : 'Novo ') + cfg.singular;
+  $('mFormBody').innerHTML = cfg.fields.map(f => fieldHtml(f, row)).join('');
+  $('mForm').dataset.key = key;
+  $('mForm').dataset.id = id || '';
+  openModal('mForm');
+}
+
+function readFieldValue(f) {
+  const el = $('f_' + f.key);
+  if (f.type === 'checkbox') return el.checked;
+  if (f.type === 'number') return el.value === '' ? 0 : Number(el.value);
+  return el.value;
+}
+
+async function saveCrudForm() {
+  const key = $('mForm').dataset.key, id = $('mForm').dataset.id;
+  const cfg = CRUD[key];
+  const payload = {};
+  for (const f of cfg.fields) {
+    const val = readFieldValue(f);
+    if (f.required && (val === '' || val === null || val === undefined)) { toast(`Preencha o campo "${f.label}".`, 'err'); return; }
+    payload[f.key] = val === '' ? null : val;
+  }
+  const btn = $('mFormSaveBtn');
+  setBtnLoading(btn, 'Salvando...');
+  const res = id ? await sb.from(cfg.table).update(payload).eq('id', id) : await sb.from(cfg.table).insert(payload);
+  resetBtn(btn, 'Salvar');
+  if (res.error) { toast('Erro: ' + res.error.message, 'err'); return; }
+  toast(id ? 'Registro atualizado!' : 'Registro criado!', 'ok');
+  closeModal('mForm');
+  await loadLookups();
+  if (crudState.key === key) reloadCrud();
+}
+
+async function deleteCrudRow(id) {
+  if (!confirm('Deseja realmente excluir este registro?')) return;
+  const { cfg } = crudState;
+  const { error } = await sb.from(cfg.table).delete().eq('id', id);
+  if (error) { toast('Erro ao excluir: ' + error.message, 'err'); return; }
+  toast('Excluído com sucesso.', 'ok');
+  await loadLookups();
+  reloadCrud();
+}
+
+/* ══════════════════════════════════════════════
+   COMPRAS
+══════════════════════════════════════════════ */
+async function renderCompras() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Pedidos de Compra</h2><p>Compras de matéria-prima e mercadorias com recebimento gerando entrada em estoque</p></div>
+      <button class="btn btn-primary" onclick="openPOForm()">+ Novo Pedido</button></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Nº</th><th>Fornecedor</th><th>Depósito</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody id="poBody"><tr><td colspan="6" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  await loadPOs();
+}
+
+async function loadPOs() {
+  const { data, error } = await sb.from('erp_purchase_orders').select('*, erp_partners(name), erp_warehouses(name)').order('created_at', { ascending:false });
+  if (error) { toast('Erro ao carregar pedidos: ' + error.message, 'err'); return; }
+  $('poBody').innerHTML = (data && data.length) ? data.map(po => `
+    <tr>
+      <td>#${po.number}</td><td>${esc(po.erp_partners?.name || '—')}</td><td>${esc(po.erp_warehouses?.name || '—')}</td>
+      <td>${statusBadge(po.status)}</td><td>${fmtDate(po.created_at)}</td>
+      <td style="text-align:right"><button class="btn btn-sm" onclick="openPODetail('${po.id}')">Abrir</button></td>
+    </tr>`).join('') : emptyRow(6);
+}
+
+let poItemsDraft = [];
+function openPOForm() {
+  poItemsDraft = [];
+  $('poSupplier').innerHTML = lookupOptions('suppliers');
+  $('poWarehouse').innerHTML = lookupOptions('warehouses');
+  $('poNotes').value = '';
+  addPOItemRow();
+  openModal('mPO');
+}
+function addPOItemRow() { poItemsDraft.push({ product_id:'', qty:1, unit_price:0 }); renderPOItemsTable(); }
+function removePOItemRow(i) { poItemsDraft.splice(i,1); renderPOItemsTable(); }
+function updatePOTotal() {
+  const total = poItemsDraft.reduce((s,r) => s + (Number(r.qty)||0) * (Number(r.unit_price)||0), 0);
+  $('poItemsTotal').textContent = 'Total: ' + money(total);
+}
+function renderPOItemsTable() {
+  $('poItemsTable').innerHTML = `<table class="mini-table"><thead><tr><th>Produto</th><th style="width:90px">Qtd</th><th style="width:120px">Preço Unit.</th><th></th></tr></thead><tbody>
+    ${poItemsDraft.length ? poItemsDraft.map((r,i) => `<tr>
+      <td><select onchange="poItemsDraft[${i}].product_id=this.value">${'<option value="">—</option>' + lookupOptions('products', r.product_id)}</select></td>
+      <td><input type="number" min="0.001" step="0.001" value="${r.qty}" oninput="poItemsDraft[${i}].qty=Number(this.value);updatePOTotal()"></td>
+      <td><input type="number" min="0" step="0.01" value="${r.unit_price}" oninput="poItemsDraft[${i}].unit_price=Number(this.value);updatePOTotal()"></td>
+      <td><button class="icon-btn danger" onclick="removePOItemRow(${i})">${iconTrash}</button></td>
+    </tr>`).join('') : `<tr><td colspan="4" class="empty-box">Nenhum item</td></tr>`}
+  </tbody></table>`;
+  updatePOTotal();
+}
+
+async function savePO() {
+  const supplier_id = v('poSupplier'), warehouse_id = v('poWarehouse');
+  if (!supplier_id || !warehouse_id) { toast('Selecione fornecedor e depósito.', 'err'); return; }
+  const items = poItemsDraft.filter(r => r.product_id && Number(r.qty) > 0);
+  if (!items.length) { toast('Adicione ao menos um item válido.', 'err'); return; }
+  const { data: po, error } = await sb.from('erp_purchase_orders').insert({ supplier_id, warehouse_id, notes: v('poNotes') || null, created_by: currentUser.id }).select().single();
+  if (error) { toast('Erro ao criar pedido: ' + error.message, 'err'); return; }
+  const rows = items.map(r => ({ purchase_order_id: po.id, product_id: r.product_id, qty: r.qty, unit_price: r.unit_price || 0 }));
+  const { error: e2 } = await sb.from('erp_purchase_order_items').insert(rows);
+  if (e2) { toast('Erro ao salvar itens: ' + e2.message, 'err'); await sb.from('erp_purchase_orders').delete().eq('id', po.id); return; }
+  toast('Pedido de compra criado!', 'ok');
+  closeModal('mPO');
+  loadPOs();
+}
+
+async function openPODetail(id) {
+  const { data: po } = await sb.from('erp_purchase_orders').select('*, erp_partners(name), erp_warehouses(name)').eq('id', id).single();
+  const { data: items } = await sb.from('erp_purchase_order_items').select('*, erp_products(sku,name,unit)').eq('purchase_order_id', id).order('id');
+  $('mPODetailTitle').textContent = `Pedido de Compra #${po.number}`;
+  const canCancel = !['recebido','cancelado'].includes(po.status);
+  $('mPODetailBody').innerHTML = `
+    <p style="margin-bottom:4px"><strong>Fornecedor:</strong> ${esc(po.erp_partners?.name||'—')} · <strong>Depósito:</strong> ${esc(po.erp_warehouses?.name||'—')}</p>
+    <p style="margin-bottom:14px"><strong>Status:</strong> ${statusBadge(po.status)}</p>
+    <table class="mini-table"><thead><tr><th>Produto</th><th>Pedido</th><th>Recebido</th><th>Restante</th><th></th></tr></thead><tbody>
+    ${(items||[]).map(it => {
+      const remaining = Number(it.qty) - Number(it.qty_received);
+      return `<tr><td>${esc(it.erp_products?.sku)} — ${esc(it.erp_products?.name)}</td><td>${it.qty} ${esc(it.erp_products?.unit||'')}</td><td>${it.qty_received}</td><td>${remaining}</td>
+      <td>${remaining > 0 ? `<button class="btn btn-sm" onclick="receivePOItem('${it.id}',${remaining})">Receber</button>` : '—'}</td></tr>`;
+    }).join('') || `<tr><td colspan="5" class="empty-box">Sem itens</td></tr>`}
+    </tbody></table>
+    ${canCancel ? `<div style="margin-top:14px;text-align:right"><button class="btn btn-danger btn-sm" onclick="cancelPO('${po.id}')">Cancelar Pedido</button></div>` : ''}
+  `;
+  openModal('mPODetail');
+}
+
+function receivePOItem(itemId, remaining) {
+  openQtyModal('Receber mercadoria', `Quantidade restante no pedido: ${remaining}`, remaining, async (qty) => {
+    const { error } = await sb.rpc('erp_receive_purchase_order_item', { p_item_id: itemId, p_qty: qty });
+    if (error) { toast('Erro: ' + error.message, 'err'); return; }
+    toast('Recebimento registrado! Estoque atualizado.', 'ok');
+    closeModal('mPODetail');
+    loadPOs();
+  });
+}
+
+async function cancelPO(id) {
+  if (!confirm('Cancelar este pedido de compra?')) return;
+  const { error } = await sb.from('erp_purchase_orders').update({ status: 'cancelado' }).eq('id', id);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Pedido cancelado.', 'ok');
+  closeModal('mPODetail');
+  loadPOs();
+}
+
+/* ══════════════════════════════════════════════
+   VENDAS (logística de expedição)
+══════════════════════════════════════════════ */
+async function renderVendas() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Pedidos de Venda</h2><p>Vendas e expedição — a expedição gera saída de estoque no depósito</p></div>
+      <button class="btn btn-primary" onclick="openSOForm()">+ Novo Pedido</button></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Nº</th><th>Cliente</th><th>Transportadora</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody id="soBody"><tr><td colspan="6" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  await loadSOs();
+}
+
+async function loadSOs() {
+  const { data, error } = await sb.from('erp_sales_orders').select('*, erp_partners(name), erp_carriers(name)').order('created_at', { ascending:false });
+  if (error) { toast('Erro ao carregar pedidos: ' + error.message, 'err'); return; }
+  $('soBody').innerHTML = (data && data.length) ? data.map(so => `
+    <tr>
+      <td>#${so.number}</td><td>${esc(so.erp_partners?.name || '—')}</td><td>${esc(so.erp_carriers?.name || '—')}</td>
+      <td>${statusBadge(so.status)}</td><td>${fmtDate(so.created_at)}</td>
+      <td style="text-align:right"><button class="btn btn-sm" onclick="openSODetail('${so.id}')">Abrir</button></td>
+    </tr>`).join('') : emptyRow(6);
+}
+
+let soItemsDraft = [];
+function openSOForm() {
+  soItemsDraft = [];
+  $('soCustomer').innerHTML = lookupOptions('customers');
+  $('soWarehouse').innerHTML = lookupOptions('warehouses');
+  $('soCarrier').innerHTML = '<option value="">—</option>' + lookupOptions('carriers');
+  $('soNotes').value = '';
+  addSOItemRow();
+  openModal('mSO');
+}
+function addSOItemRow() { soItemsDraft.push({ product_id:'', qty:1, unit_price:0 }); renderSOItemsTable(); }
+function removeSOItemRow(i) { soItemsDraft.splice(i,1); renderSOItemsTable(); }
+function updateSOTotal() {
+  const total = soItemsDraft.reduce((s,r) => s + (Number(r.qty)||0) * (Number(r.unit_price)||0), 0);
+  $('soItemsTotal').textContent = 'Total: ' + money(total);
+}
+function renderSOItemsTable() {
+  $('soItemsTable').innerHTML = `<table class="mini-table"><thead><tr><th>Produto</th><th style="width:90px">Qtd</th><th style="width:120px">Preço Unit.</th><th></th></tr></thead><tbody>
+    ${soItemsDraft.length ? soItemsDraft.map((r,i) => `<tr>
+      <td><select onchange="soItemsDraft[${i}].product_id=this.value">${'<option value="">—</option>' + lookupOptions('products', r.product_id)}</select></td>
+      <td><input type="number" min="0.001" step="0.001" value="${r.qty}" oninput="soItemsDraft[${i}].qty=Number(this.value);updateSOTotal()"></td>
+      <td><input type="number" min="0" step="0.01" value="${r.unit_price}" oninput="soItemsDraft[${i}].unit_price=Number(this.value);updateSOTotal()"></td>
+      <td><button class="icon-btn danger" onclick="removeSOItemRow(${i})">${iconTrash}</button></td>
+    </tr>`).join('') : `<tr><td colspan="4" class="empty-box">Nenhum item</td></tr>`}
+  </tbody></table>`;
+  updateSOTotal();
+}
+
+async function saveSO() {
+  const customer_id = v('soCustomer'), warehouse_id = v('soWarehouse');
+  if (!customer_id || !warehouse_id) { toast('Selecione cliente e depósito.', 'err'); return; }
+  const items = soItemsDraft.filter(r => r.product_id && Number(r.qty) > 0);
+  if (!items.length) { toast('Adicione ao menos um item válido.', 'err'); return; }
+  const { data: so, error } = await sb.from('erp_sales_orders').insert({
+    customer_id, warehouse_id, carrier_id: v('soCarrier') || null, notes: v('soNotes') || null,
+    status: 'confirmado', created_by: currentUser.id,
+  }).select().single();
+  if (error) { toast('Erro ao criar pedido: ' + error.message, 'err'); return; }
+  const rows = items.map(r => ({ sales_order_id: so.id, product_id: r.product_id, qty: r.qty, unit_price: r.unit_price || 0 }));
+  const { error: e2 } = await sb.from('erp_sales_order_items').insert(rows);
+  if (e2) { toast('Erro ao salvar itens: ' + e2.message, 'err'); await sb.from('erp_sales_orders').delete().eq('id', so.id); return; }
+  toast('Pedido de venda criado!', 'ok');
+  closeModal('mSO');
+  loadSOs();
+}
+
+async function openSODetail(id) {
+  const { data: so } = await sb.from('erp_sales_orders').select('*, erp_partners(name), erp_warehouses(name), erp_carriers(name)').eq('id', id).single();
+  const { data: items } = await sb.from('erp_sales_order_items').select('*, erp_products(sku,name,unit)').eq('sales_order_id', id).order('id');
+  $('mSODetailTitle').textContent = `Pedido de Venda #${so.number}`;
+  const canCancel = !['expedido','cancelado'].includes(so.status);
+  $('mSODetailBody').innerHTML = `
+    <p style="margin-bottom:4px"><strong>Cliente:</strong> ${esc(so.erp_partners?.name||'—')} · <strong>Depósito:</strong> ${esc(so.erp_warehouses?.name||'—')}</p>
+    <p style="margin-bottom:14px"><strong>Transportadora:</strong> ${esc(so.erp_carriers?.name||'—')} · <strong>Status:</strong> ${statusBadge(so.status)}</p>
+    <table class="mini-table"><thead><tr><th>Produto</th><th>Pedido</th><th>Expedido</th><th>Restante</th><th></th></tr></thead><tbody>
+    ${(items||[]).map(it => {
+      const remaining = Number(it.qty) - Number(it.qty_shipped);
+      return `<tr><td>${esc(it.erp_products?.sku)} — ${esc(it.erp_products?.name)}</td><td>${it.qty} ${esc(it.erp_products?.unit||'')}</td><td>${it.qty_shipped}</td><td>${remaining}</td>
+      <td>${remaining > 0 ? `<button class="btn btn-sm" onclick="shipSOItem('${it.id}',${remaining})">Expedir</button>` : '—'}</td></tr>`;
+    }).join('') || `<tr><td colspan="5" class="empty-box">Sem itens</td></tr>`}
+    </tbody></table>
+    ${canCancel ? `<div style="margin-top:14px;text-align:right"><button class="btn btn-danger btn-sm" onclick="cancelSO('${so.id}')">Cancelar Pedido</button></div>` : ''}
+  `;
+  openModal('mSODetail');
+}
+
+function shipSOItem(itemId, remaining) {
+  openQtyModal('Expedir mercadoria', `Quantidade restante no pedido: ${remaining}`, remaining, async (qty) => {
+    const { error } = await sb.rpc('erp_ship_sales_order_item', { p_item_id: itemId, p_qty: qty });
+    if (error) { toast('Erro: ' + error.message, 'err'); return; }
+    toast('Expedição registrada! Estoque atualizado.', 'ok');
+    closeModal('mSODetail');
+    loadSOs();
+  });
+}
+
+async function cancelSO(id) {
+  if (!confirm('Cancelar este pedido de venda?')) return;
+  const { error } = await sb.from('erp_sales_orders').update({ status: 'cancelado' }).eq('id', id);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Pedido cancelado.', 'ok');
+  closeModal('mSODetail');
+  loadSOs();
+}
+
+/* ══════════════════════════════════════════════
+   ESTOQUE (kardex e saldo) — logística
+══════════════════════════════════════════════ */
+async function renderEstoqueSaldo() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Saldo de Estoque</h2><p>Posição atual por produto e depósito</p></div></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Produto</th><th>Depósito</th><th>Saldo</th><th>Valor</th></tr></thead><tbody id="stockBody"><tr><td colspan="5" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  const { data, error } = await sb.from('erp_stock_balance').select('*');
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  const rows = (data || []).filter(b => Math.abs(Number(b.qty_on_hand)) > 0.0001);
+  $('stockBody').innerHTML = rows.length ? rows.map(b => {
+    const p = findProduct(b.product_id);
+    const w = LOOKUP.warehouses.find(x => x.id === b.warehouse_id);
+    return `<tr><td>${esc(p?.sku||'—')}</td><td>${esc(p?.name||'—')}</td><td>${esc(w?.name||'—')}</td><td>${Number(b.qty_on_hand).toLocaleString('pt-BR')} ${esc(p?.unit||'')}</td><td>${money(Number(b.qty_on_hand)*(p?.cost_price||0))}</td></tr>`;
+  }).join('') : emptyRow(5);
+}
+
+async function renderEstoqueMov() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Movimentações de Estoque</h2><p>Kardex completo — entradas e saídas de todos os módulos</p></div>
+      <button class="btn btn-primary" onclick="openAdjustForm()">+ Ajuste Manual</button></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Data</th><th>Produto</th><th>Depósito</th><th>Tipo</th><th>Qtd</th><th>Origem</th></tr></thead><tbody id="movBody"><tr><td colspan="6" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  const { data, error } = await sb.from('erp_stock_moves').select('*').order('created_at', { ascending:false }).limit(200);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  const typeLabels = {
+    entrada_compra:['Entrada (compra)','green'], saida_venda:['Saída (venda)','red'],
+    ajuste_entrada:['Ajuste (entrada)','blue'], ajuste_saida:['Ajuste (saída)','amber'],
+    consumo_producao:['Consumo (produção)','amber'], producao_acabado:['Produção (acabado)','green'],
+    transferencia_saida:['Transf. (saída)','gray'], transferencia_entrada:['Transf. (entrada)','gray'],
+  };
+  const refLabels = { purchase_order:'Pedido de Compra', sales_order:'Pedido de Venda', production_order:'Ordem de Produção' };
+  $('movBody').innerHTML = (data && data.length) ? data.map(m => {
+    const p = findProduct(m.product_id);
+    const w = LOOKUP.warehouses.find(x => x.id === m.warehouse_id);
+    const [label, color] = typeLabels[m.type] || [m.type,'gray'];
+    return `<tr><td>${fmtDate(m.created_at)}</td><td>${esc(p?.sku||'—')} — ${esc(p?.name||'—')}</td><td>${esc(w?.name||'—')}</td><td><span class="badge b-${color}">${label}</span></td><td>${Number(m.qty).toLocaleString('pt-BR')}</td><td>${refLabels[m.ref_type]||m.notes||'—'}</td></tr>`;
+  }).join('') : emptyRow(6);
+}
+
+function openAdjustForm() {
+  $('adjProduct').innerHTML = lookupOptions('products');
+  $('adjWarehouse').innerHTML = lookupOptions('warehouses');
+  $('adjType').value = 'ajuste_entrada';
+  $('adjQty').value = '';
+  $('adjNotes').value = '';
+  openModal('mAdjust');
+}
+
+async function saveAdjust() {
+  const product_id = v('adjProduct'), warehouse_id = v('adjWarehouse'), qty = Number(v('adjQty'));
+  if (!product_id || !warehouse_id || !qty || qty <= 0) { toast('Preencha produto, depósito e quantidade válida.', 'err'); return; }
+  const p = findProduct(product_id);
+  const { error } = await sb.from('erp_stock_moves').insert({
+    product_id, warehouse_id, type: v('adjType'), qty, unit_cost: p?.cost_price || 0,
+    ref_type: 'manual', notes: v('adjNotes') || 'Ajuste manual', created_by: currentUser.id,
+  });
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Ajuste registrado!', 'ok');
+  closeModal('mAdjust');
+  renderEstoqueMov();
+}
+
+/* ══════════════════════════════════════════════
+   PRODUÇÃO (fábrica) — BOM e Ordens de Produção
+══════════════════════════════════════════════ */
+async function renderProducaoBom() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Estruturas de Produto (BOM)</h2><p>Lista de materiais para fabricação de produtos acabados</p></div>
+      <button class="btn btn-primary" onclick="openBOMForm()">+ Nova Estrutura</button></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Estrutura</th><th></th></tr></thead><tbody id="bomBody"><tr><td colspan="3" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  await loadBOMs();
+}
+async function loadBOMs() {
+  const { data, error } = await sb.from('erp_boms').select('*, erp_products(sku,name)').order('name');
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  $('bomBody').innerHTML = (data && data.length) ? data.map(b => `
+    <tr><td>${esc(b.erp_products?.sku)} — ${esc(b.erp_products?.name)}</td><td>${esc(b.name)}</td>
+    <td style="text-align:right"><button class="btn btn-sm" onclick="openBOMDetail('${b.id}')">Gerenciar Itens</button></td></tr>`).join('') : emptyRow(3);
+}
+function openBOMForm() {
+  $('bomProduct').innerHTML = lookupOptions('produtos_acabados');
+  $('bomName').value = '';
+  openModal('mBOM');
+}
+async function saveBOM() {
+  const product_id = v('bomProduct'), name = v('bomName');
+  if (!product_id || !name) { toast('Selecione o produto e informe o nome da estrutura.', 'err'); return; }
+  const { data, error } = await sb.from('erp_boms').insert({ product_id, name }).select().single();
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Estrutura criada! Adicione os componentes.', 'ok');
+  closeModal('mBOM');
+  await loadLookups();
+  loadBOMs();
+  openBOMDetail(data.id);
+}
+async function openBOMDetail(id) {
+  const { data: bom } = await sb.from('erp_boms').select('*, erp_products(sku,name)').eq('id', id).single();
+  const { data: items } = await sb.from('erp_bom_items').select('*, erp_products(sku,name,unit)').eq('bom_id', id).order('id');
+  $('mBOMDetailTitle').textContent = `${bom.name} — ${bom.erp_products?.name}`;
+  $('mBOMDetailBody').innerHTML = `
+    <table class="mini-table"><thead><tr><th>Componente</th><th>Qtd por unidade</th><th></th></tr></thead><tbody>
+    ${(items||[]).map(it => `<tr><td>${esc(it.erp_products?.sku)} — ${esc(it.erp_products?.name)}</td><td>${it.qty_per} ${esc(it.erp_products?.unit||'')}</td>
+      <td><button class="icon-btn danger" onclick="removeBOMItem('${it.id}','${id}')">${iconTrash}</button></td></tr>`).join('') || `<tr><td colspan="3" class="empty-box">Nenhum componente ainda</td></tr>`}
+    </tbody></table>
+    <div class="section-title">Adicionar componente</div>
+    <div class="form-row">
+      <div class="form-field"><label>Componente</label><select id="bomItemProduct">${lookupOptions('componentes')}</select></div>
+      <div class="form-field"><label>Qtd por unidade</label><input type="number" id="bomItemQty" min="0.0001" step="0.0001" value="1"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="addBOMItem('${id}')">+ Adicionar</button>
+  `;
+  openModal('mBOMDetail');
+}
+async function addBOMItem(bomId) {
+  const component_id = v('bomItemProduct'), qty_per = Number(v('bomItemQty'));
+  if (!component_id || !qty_per || qty_per <= 0) { toast('Selecione o componente e a quantidade.', 'err'); return; }
+  const { error } = await sb.from('erp_bom_items').insert({ bom_id: bomId, component_id, qty_per });
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Componente adicionado.', 'ok');
+  openBOMDetail(bomId);
+}
+async function removeBOMItem(itemId, bomId) {
+  if (!confirm('Remover este componente da estrutura?')) return;
+  const { error } = await sb.from('erp_bom_items').delete().eq('id', itemId);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  openBOMDetail(bomId);
+}
+
+async function renderProducaoOP() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Ordens de Produção</h2><p>Apontamento de produção consome componentes da BOM e gera o produto acabado no estoque</p></div>
+      <button class="btn btn-primary" onclick="openOPForm()">+ Nova Ordem</button></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Nº</th><th>Produto</th><th>Depósito</th><th>Planejado</th><th>Produzido</th><th>Status</th><th></th></tr></thead><tbody id="opBody"><tr><td colspan="7" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  await loadOPs();
+}
+async function loadOPs() {
+  const { data, error } = await sb.from('erp_production_orders').select('*, erp_products(sku,name,unit), erp_warehouses(name)').order('created_at', { ascending:false });
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  $('opBody').innerHTML = (data && data.length) ? data.map(o => {
+    const remaining = Number(o.qty_planned) - Number(o.qty_produced);
+    return `<tr><td>#${o.number}</td><td>${esc(o.erp_products?.sku)} — ${esc(o.erp_products?.name)}</td><td>${esc(o.erp_warehouses?.name||'—')}</td>
+    <td>${o.qty_planned}</td><td>${o.qty_produced}</td><td>${statusBadge(o.status)}</td>
+    <td style="text-align:right">${remaining > 0 && o.status !== 'cancelada' ? `<button class="btn btn-sm" onclick="apontarOP('${o.id}',${remaining})">Apontar</button>` : '—'}</td></tr>`;
+  }).join('') : emptyRow(7);
+}
+function onOPProductChange() {
+  const productId = v('opProduct');
+  const boms = LOOKUP.boms.filter(b => b.product_id === productId);
+  $('opBom').innerHTML = boms.length ? boms.map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('') : '<option value="">Nenhuma estrutura cadastrada</option>';
+}
+function openOPForm() {
+  $('opProduct').innerHTML = lookupOptions('produtos_acabados');
+  $('opWarehouse').innerHTML = lookupOptions('warehouses');
+  $('opQty').value = '';
+  $('opNotes').value = '';
+  onOPProductChange();
+  openModal('mOP');
+}
+async function saveOP() {
+  const product_id = v('opProduct'), bom_id = v('opBom'), warehouse_id = v('opWarehouse'), qty_planned = Number(v('opQty'));
+  if (!product_id || !bom_id) { toast('Selecione um produto com estrutura (BOM) cadastrada.', 'err'); return; }
+  if (!warehouse_id || !qty_planned || qty_planned <= 0) { toast('Preencha depósito e quantidade planejada.', 'err'); return; }
+  const { error } = await sb.from('erp_production_orders').insert({ product_id, bom_id, warehouse_id, qty_planned, notes: v('opNotes') || null, created_by: currentUser.id });
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Ordem de produção criada!', 'ok');
+  closeModal('mOP');
+  loadOPs();
+}
+function apontarOP(id, remaining) {
+  openQtyModal('Apontar Produção', `Quantidade restante a produzir: ${remaining}`, remaining, async (qty) => {
+    const { error } = await sb.rpc('erp_finish_production_order', { p_order_id: id, p_qty: qty });
+    if (error) { toast('Erro: ' + error.message, 'err'); return; }
+    toast('Produção apontada! Componentes consumidos e produto acabado gerado.', 'ok');
+    loadOPs();
+  });
+}
+
+/* ══════════════════════════════════════════════
+   FINANCEIRO / CONTÁBIL
+══════════════════════════════════════════════ */
+async function renderLancamentos() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Lançamentos Contábeis</h2><p>Partidas dobradas — todo lançamento precisa fechar em débito = crédito</p></div>
+      ${isManager ? `<button class="btn btn-primary" onclick="openJournalForm()">+ Novo Lançamento</button>` : ''}</div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Nº</th><th>Data</th><th>Histórico</th><th>Total</th></tr></thead><tbody id="jeBody"><tr><td colspan="4" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  await loadJournalEntries();
+}
+async function loadJournalEntries() {
+  const { data: entries, error } = await sb.from('erp_journal_entries').select('*').order('entry_date', { ascending:false }).order('number', { ascending:false });
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  const { data: lines } = await sb.from('erp_journal_entry_lines').select('journal_entry_id,debit');
+  const totals = {};
+  (lines||[]).forEach(l => { totals[l.journal_entry_id] = (totals[l.journal_entry_id]||0) + Number(l.debit||0); });
+  $('jeBody').innerHTML = (entries && entries.length) ? entries.map(je => `
+    <tr><td>#${je.number}</td><td>${fmtDate(je.entry_date)}</td><td>${esc(je.description)}</td><td>${money(totals[je.id]||0)}</td></tr>
+  `).join('') : emptyRow(4);
+}
+let jeLinesDraft = [];
+function openJournalForm() {
+  jeLinesDraft = [];
+  $('jeDate').value = new Date().toISOString().slice(0,10);
+  $('jeDesc').value = '';
+  addJELineRow(); addJELineRow();
+  openModal('mJournal');
+}
+function addJELineRow() { jeLinesDraft.push({ account_id:'', debit:0, credit:0 }); renderJELinesTable(); }
+function removeJELineRow(i) { jeLinesDraft.splice(i,1); renderJELinesTable(); }
+function updateJETotals() {
+  const totalD = jeLinesDraft.reduce((s,l) => s + (Number(l.debit)||0), 0);
+  const totalC = jeLinesDraft.reduce((s,l) => s + (Number(l.credit)||0), 0);
+  $('jeLinesTotal').textContent = `Débito: ${money(totalD)} · Crédito: ${money(totalC)}` + (Math.abs(totalD-totalC) > 0.001 ? ' · ⚠ Não balanceado' : ' · ✓ Balanceado');
+}
+function accountOptions(selected) {
+  return LOOKUP.accounts.map(a => `<option value="${a.id}" ${a.id===selected?'selected':''}>${esc(a.code)} — ${esc(a.name)}</option>`).join('');
+}
+function renderJELinesTable() {
+  $('jeLinesTable').innerHTML = `<table class="mini-table"><thead><tr><th>Conta</th><th style="width:110px">Débito</th><th style="width:110px">Crédito</th><th></th></tr></thead><tbody>
+    ${jeLinesDraft.map((l,i) => `<tr>
+      <td><select onchange="jeLinesDraft[${i}].account_id=this.value"><option value="">—</option>${accountOptions(l.account_id)}</select></td>
+      <td><input type="number" min="0" step="0.01" value="${l.debit}" oninput="jeLinesDraft[${i}].debit=Number(this.value);if(Number(this.value)>0){jeLinesDraft[${i}].credit=0;renderJELinesTable()}else{updateJETotals()}"></td>
+      <td><input type="number" min="0" step="0.01" value="${l.credit}" oninput="jeLinesDraft[${i}].credit=Number(this.value);if(Number(this.value)>0){jeLinesDraft[${i}].debit=0;renderJELinesTable()}else{updateJETotals()}"></td>
+      <td><button class="icon-btn danger" onclick="removeJELineRow(${i})">${iconTrash}</button></td>
+    </tr>`).join('')}
+  </tbody></table>`;
+  updateJETotals();
+}
+async function saveJournal() {
+  const lines = jeLinesDraft.filter(l => l.account_id && (Number(l.debit)>0 || Number(l.credit)>0));
+  if (lines.length < 2) { toast('Adicione ao menos duas partidas.', 'err'); return; }
+  const totalD = lines.reduce((s,l) => s+(Number(l.debit)||0), 0);
+  const totalC = lines.reduce((s,l) => s+(Number(l.credit)||0), 0);
+  if (Math.abs(totalD-totalC) > 0.001) { toast('Lançamento não está balanceado (débito ≠ crédito).', 'err'); return; }
+  if (!v('jeDesc')) { toast('Informe o histórico do lançamento.', 'err'); return; }
+  const { data: je, error } = await sb.from('erp_journal_entries').insert({ entry_date: v('jeDate'), description: v('jeDesc'), created_by: currentUser.id }).select().single();
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  const rows = lines.map(l => ({ journal_entry_id: je.id, account_id: l.account_id, debit: l.debit||0, credit: l.credit||0 }));
+  const { error: e2 } = await sb.from('erp_journal_entry_lines').insert(rows);
+  if (e2) { toast('Erro ao salvar partidas: ' + e2.message, 'err'); await sb.from('erp_journal_entries').delete().eq('id', je.id); return; }
+  toast('Lançamento registrado!', 'ok');
+  closeModal('mJournal');
+  loadJournalEntries();
+}
+
+async function renderRazao() {
+  $('viewRoot').innerHTML = `
+    <div class="view-head"><div><h2>Razão / Balancete</h2><p>Totais de débito e crédito por conta contábil</p></div></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Código</th><th>Conta</th><th>Natureza</th><th>Débito</th><th>Crédito</th><th>Saldo</th></tr></thead><tbody id="razaoBody"><tr><td colspan="6" class="empty-box">Carregando...</td></tr></tbody></table></div></div>`;
+  const { data: lines, error } = await sb.from('erp_journal_entry_lines').select('account_id,debit,credit');
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  const totals = {};
+  (lines||[]).forEach(l => {
+    if (!totals[l.account_id]) totals[l.account_id] = { debit:0, credit:0 };
+    totals[l.account_id].debit += Number(l.debit||0);
+    totals[l.account_id].credit += Number(l.credit||0);
+  });
+  const typeLabels = { ativo:'Ativo', passivo:'Passivo', patrimonio_liquido:'Patrimônio Líquido', receita:'Receita', despesa:'Despesa' };
+  const accounts = LOOKUP.accounts.filter(a => totals[a.id]).sort((a,b) => a.code.localeCompare(b.code));
+  $('razaoBody').innerHTML = accounts.length ? accounts.map(a => {
+    const t = totals[a.id];
+    const saldo = t.debit - t.credit;
+    return `<tr><td>${esc(a.code)}</td><td>${esc(a.name)}</td><td>${typeLabels[a.type]||a.type}</td><td>${money(t.debit)}</td><td>${money(t.credit)}</td><td>${money(saldo)}</td></tr>`;
+  }).join('') : emptyRow(6);
+}
+</script>
+</body>
+</html>

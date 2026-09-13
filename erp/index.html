@@ -2,8 +2,19 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Nexus ERP — World Post</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B2FA6">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nexus ERP">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -32,17 +43,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
-
-/* login */
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(140deg,var(--wp-blue3) 0%,var(--wp-blue) 55%,#2541C4 100%);position:relative;overflow:hidden}
-#loginScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
-.login-box{width:100%;max-width:420px;position:relative;z-index:1}
-.login-logo-wrap{text-align:center;margin-bottom:28px}
-.login-brand{color:#fff;font-family:var(--font-cond);font-size:32px;font-weight:700;letter-spacing:3px;line-height:1}
-.login-sub{color:rgba(255,255,255,.55);font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
-.login-card{background:rgba(255,255,255,0.97);border-radius:var(--radius-xl);padding:32px;box-shadow:var(--shadow-lg)}
-.login-card h2{font-family:var(--font-cond);font-size:21px;font-weight:700;letter-spacing:0.4px;color:var(--wp-blue);margin-bottom:3px}
-.login-card>p{font-size:13px;color:var(--text2);margin-bottom:22px}
 
 /* forms */
 .form-field{margin-bottom:14px}
@@ -173,32 +173,7 @@ tbody tr:hover td{background:#FAFBFF}
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo-wrap">
-      <div class="login-brand">NEXUS ERP</div>
-      <div class="login-sub">World Post · Fábrica · Logística · Contábil</div>
-    </div>
-    <div class="login-card">
-      <h2>Bem-vindo</h2>
-      <p>Acesse com suas credenciais do Portal World Post</p>
-      <div id="loginErr" class="msg-err"></div>
-      <div class="form-field">
-        <label>E-mail</label>
-        <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
-      </div>
-      <div class="form-field">
-        <label>Senha</label>
-        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-      </div>
-      <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">Entrar</button>
-      <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:14px">Prefira acessar pelo tile "Nexus ERP" dentro do Portal World Post.</p>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
+<!-- APP (modo de teste — sem login) -->
 <div id="appScreen">
   <div class="topbar">
     <div class="topbar-left">
@@ -207,15 +182,8 @@ tbody tr:hover td{background:#FAFBFF}
       <span class="topbar-label">World Post</span>
     </div>
     <div class="topbar-right">
-      <a class="btn btn-sm btn-ghost topbar-btn" href="../index.html">← Portal</a>
-      <div class="user-pill">
-        <div class="uavatar" id="topAvatar">--</div>
-        <div>
-          <div class="uname" id="topName">—</div>
-          <div class="urole" id="topRole">—</div>
-        </div>
-      </div>
-      <button class="btn btn-sm btn-ghost topbar-btn" onclick="doLogout()">Sair</button>
+      <button class="btn btn-sm btn-ghost topbar-btn" id="installBtn" style="display:none" onclick="installApp()">⬇ Instalar App</button>
+      <span class="badge b-amber">Modo de Teste — sem login</span>
     </div>
   </div>
 
@@ -397,87 +365,54 @@ tbody tr:hover td{background:#FAFBFF}
 
 <script>
 /* ══════════════════════════════════════════════
-   CONFIG — mesmo projeto Supabase do Portal
+   CONFIG — projeto Supabase de TESTE (sem login)
 ══════════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://pdmfvaqvfdwdpnwoaapm.supabase.co';
-const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkbWZ2YXF2ZmR3ZHBud29hYXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDYzODQsImV4cCI6MjA5NjY4MjM4NH0.GtAH5HRk2WAOFSVsJjfdqOauhV_nZ6o38XswrZH4hWo';
+const SUPABASE_URL  = 'https://bdvbuiuzkudwayibbjaz.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkdmJ1aXV6a3Vkd2F5aWJiamF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzUyNTQsImV4cCI6MjEwNDkxMTI1NH0.PUabHrFYMWHDHlJEbHYsL9J4gjO49i_2oe0c8U-W3ds';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { detectSessionInUrl: false } });
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let currentUser = null;
-let currentProfile = null;
-let isManager = false;
+let isManager = true; // modo de teste: acesso total, sem controle de papéis
 let currentView = 'dashboard';
 const LOOKUP = { products:[], partners:[], warehouses:[], carriers:[], boms:[], accounts:[] };
 
 /* ══════════════════════════════════════════════
-   BOOT — SSO vindo do Portal (token no hash) ou sessão local
+   BOOT — sem autenticação (fase de testes)
 ══════════════════════════════════════════════ */
 (async () => {
-  const hash = window.location.hash;
-  if (hash && hash.includes('access_token=')) {
-    const params = new URLSearchParams(hash.substring(1));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
-    if (access_token && refresh_token) {
-      try { await sb.auth.setSession({ access_token, refresh_token }); } catch(e) {}
-    }
-    history.replaceState(null, '', window.location.pathname + window.location.search);
-  }
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    await loadProfile();
-  } else {
-    show('loginScreen');
-  }
-
-  sb.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT') {
-      currentUser = null; currentProfile = null;
-      hide('appScreen'); show('loginScreen');
-    }
-  });
-})();
-
-async function doLogin() {
-  const email = v('loginEmail'), pass = v('loginPass');
-  const btn = $('loginBtn');
-  $('loginErr').style.display = 'none';
-  if (!email || !pass) { showEl($('loginErr'), 'Preencha e-mail e senha.'); return; }
-  setBtnLoading(btn, 'Entrando...');
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  resetBtn(btn, 'Entrar');
-  if (error) { showEl($('loginErr'), 'E-mail ou senha inválidos.'); return; }
-  currentUser = data.user;
-  await loadProfile();
-}
-
-async function doLogout() {
-  await sb.auth.signOut();
-}
-
-async function loadProfile() {
-  const { data, error } = await sb.from('portal_profiles').select('*').eq('id', currentUser.id).single();
-  if (error || !data) {
-    showEl($('loginErr'), 'Perfil não encontrado. Acesse pelo Portal World Post.');
-    await sb.auth.signOut();
-    return;
-  }
-  if (data.status !== 'active') {
-    showEl($('loginErr'), 'Seu acesso ainda não foi liberado. Contate o administrador.');
-    await sb.auth.signOut();
-    return;
-  }
-  currentProfile = data;
-  isManager = data.role === 'admin' || data.role === 'lider';
   renderShell();
   await loadLookups();
-  hide('loginScreen');
   $('appScreen').style.display = 'flex';
   navigate('dashboard');
+})();
+
+/* ══════════════════════════════════════════════
+   PWA — service worker + instalar no Windows/celular
+══════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  $('installBtn').style.display = '';
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  $('installBtn').style.display = 'none';
+  toast('Nexus ERP instalado!', 'ok');
+});
+async function installApp() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  $('installBtn').style.display = 'none';
 }
 
 /* ══════════════════════════════════════════════
@@ -532,12 +467,6 @@ const VIEWS = {
 };
 
 function renderShell() {
-  const initials = (currentProfile.nome || 'U').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-  $('topAvatar').textContent = initials;
-  $('topName').textContent = (currentProfile.nome || '').split(' ')[0] || currentProfile.email;
-  const roleLabel = { admin:'Administrador', lider:'Líder', usuario:'Usuário' };
-  $('topRole').textContent = roleLabel[currentProfile.role] || 'Usuário';
-
   $('sidebar').innerHTML = NAV.map(group => `
     <div class="nav-group">
       <div class="nav-group-label">${group.label}</div>
@@ -948,7 +877,7 @@ async function savePO() {
   if (!supplier_id || !warehouse_id) { toast('Selecione fornecedor e depósito.', 'err'); return; }
   const items = poItemsDraft.filter(r => r.product_id && Number(r.qty) > 0);
   if (!items.length) { toast('Adicione ao menos um item válido.', 'err'); return; }
-  const { data: po, error } = await sb.from('erp_purchase_orders').insert({ supplier_id, warehouse_id, notes: v('poNotes') || null, created_by: currentUser.id }).select().single();
+  const { data: po, error } = await sb.from('erp_purchase_orders').insert({ supplier_id, warehouse_id, notes: v('poNotes') || null, created_by: null }).select().single();
   if (error) { toast('Erro ao criar pedido: ' + error.message, 'err'); return; }
   const rows = items.map(r => ({ purchase_order_id: po.id, product_id: r.product_id, qty: r.qty, unit_price: r.unit_price || 0 }));
   const { error: e2 } = await sb.from('erp_purchase_order_items').insert(rows);
@@ -1054,7 +983,7 @@ async function saveSO() {
   if (!items.length) { toast('Adicione ao menos um item válido.', 'err'); return; }
   const { data: so, error } = await sb.from('erp_sales_orders').insert({
     customer_id, warehouse_id, carrier_id: v('soCarrier') || null, notes: v('soNotes') || null,
-    status: 'confirmado', created_by: currentUser.id,
+    status: 'confirmado', created_by: null,
   }).select().single();
   if (error) { toast('Erro ao criar pedido: ' + error.message, 'err'); return; }
   const rows = items.map(r => ({ sales_order_id: so.id, product_id: r.product_id, qty: r.qty, unit_price: r.unit_price || 0 }));
@@ -1158,7 +1087,7 @@ async function saveAdjust() {
   const p = findProduct(product_id);
   const { error } = await sb.from('erp_stock_moves').insert({
     product_id, warehouse_id, type: v('adjType'), qty, unit_cost: p?.cost_price || 0,
-    ref_type: 'manual', notes: v('adjNotes') || 'Ajuste manual', created_by: currentUser.id,
+    ref_type: 'manual', notes: v('adjNotes') || 'Ajuste manual', created_by: null,
   });
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast('Ajuste registrado!', 'ok');
@@ -1266,7 +1195,7 @@ async function saveOP() {
   const product_id = v('opProduct'), bom_id = v('opBom'), warehouse_id = v('opWarehouse'), qty_planned = Number(v('opQty'));
   if (!product_id || !bom_id) { toast('Selecione um produto com estrutura (BOM) cadastrada.', 'err'); return; }
   if (!warehouse_id || !qty_planned || qty_planned <= 0) { toast('Preencha depósito e quantidade planejada.', 'err'); return; }
-  const { error } = await sb.from('erp_production_orders').insert({ product_id, bom_id, warehouse_id, qty_planned, notes: v('opNotes') || null, created_by: currentUser.id });
+  const { error } = await sb.from('erp_production_orders').insert({ product_id, bom_id, warehouse_id, qty_planned, notes: v('opNotes') || null, created_by: null });
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast('Ordem de produção criada!', 'ok');
   closeModal('mOP');
@@ -1337,7 +1266,7 @@ async function saveJournal() {
   const totalC = lines.reduce((s,l) => s+(Number(l.credit)||0), 0);
   if (Math.abs(totalD-totalC) > 0.001) { toast('Lançamento não está balanceado (débito ≠ crédito).', 'err'); return; }
   if (!v('jeDesc')) { toast('Informe o histórico do lançamento.', 'err'); return; }
-  const { data: je, error } = await sb.from('erp_journal_entries').insert({ entry_date: v('jeDate'), description: v('jeDesc'), created_by: currentUser.id }).select().single();
+  const { data: je, error } = await sb.from('erp_journal_entries').insert({ entry_date: v('jeDate'), description: v('jeDesc'), created_by: null }).select().single();
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   const rows = lines.map(l => ({ journal_entry_id: je.id, account_id: l.account_id, debit: l.debit||0, credit: l.credit||0 }));
   const { error: e2 } = await sb.from('erp_journal_entry_lines').insert(rows);
